@@ -69,13 +69,23 @@
 
     .gw-title-red {
       color: #ef233c;
-      -webkit-text-stroke: 2.5px #ffffff;
-      text-shadow: 0 5px 0 #1d4ed8, 0 8px 16px rgba(15, 23, 42, 0.25);
+      -webkit-text-stroke: 1.75px #ffffff;
+      text-shadow: 0 4px 0 #1d4ed8, 0 8px 16px rgba(15, 23, 42, 0.25);
     }
     .gw-title-blue {
       color: #2563eb;
-      -webkit-text-stroke: 2.5px #ffffff;
-      text-shadow: 0 5px 0 #1e3a8a, 0 8px 16px rgba(15, 23, 42, 0.25);
+      -webkit-text-stroke: 1.75px #ffffff;
+      text-shadow: 0 4px 0 #1e3a8a, 0 8px 16px rgba(15, 23, 42, 0.25);
+    }
+    @media (min-width: 640px) {
+      .gw-title-red {
+        -webkit-text-stroke: 2.5px #ffffff;
+        text-shadow: 0 5px 0 #1d4ed8, 0 8px 16px rgba(15, 23, 42, 0.25);
+      }
+      .gw-title-blue {
+        -webkit-text-stroke: 2.5px #ffffff;
+        text-shadow: 0 5px 0 #1e3a8a, 0 8px 16px rgba(15, 23, 42, 0.25);
+      }
     }
 
     /* Portrait-Only Guess Who Tile */
@@ -145,8 +155,8 @@
   </div>
 
   <!-- Top Navigation -->
-  <header class="relative z-20 flex items-center justify-between px-4 sm:px-6 pt-4 pb-2">
-    <div class="flex items-center gap-2">
+  <header class="relative z-20 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-6 pt-3 sm:pt-4 pb-2">
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
       <button id="homeBtn" onclick="navigateTo('portal')" class="hidden bg-white/95 hover:bg-white text-slate-800 font-extrabold text-xs sm:text-sm px-3 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
         <span>🏠</span> Home
       </button>
@@ -159,7 +169,7 @@
       </button>
     </div>
 
-    <div class="flex items-center gap-2 bg-white/90 backdrop-blur px-3.5 py-1.5 rounded-full shadow text-xs font-extrabold text-slate-700">
+    <div class="flex items-center gap-1.5 sm:gap-2 bg-white/90 backdrop-blur px-3 sm:px-3.5 py-1.5 rounded-full shadow text-[11px] sm:text-xs font-extrabold text-slate-700 ml-auto sm:ml-0">
       <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
       <span id="cloudStatusText">Local Mode</span>
       <span class="text-slate-300">|</span>
@@ -173,7 +183,7 @@
       <div onclick="handleSecretAdminTap()" class="inline-block bg-white/90 text-blue-700 font-extrabold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm mb-3 select-none cursor-default">
         Teyvat Mini-Game Hub
       </div>
-      <h1 class="font-logo text-5xl sm:text-6xl font-bold tracking-tight gw-title-red">
+      <h1 class="font-logo text-4xl sm:text-6xl font-bold tracking-tight gw-title-red">
         Genshin <span class="gw-title-blue">Arcade</span>
       </h1>
       <p class="mt-3 text-slate-800 font-bold text-base sm:text-lg max-w-xl mx-auto bg-white/75 backdrop-blur-sm px-5 py-2 rounded-2xl shadow-sm">
@@ -274,7 +284,7 @@
   <!-- ==================== 3. GUESS WHO GAME BOARD ==================== -->
   <section id="gwGameView" class="hidden relative z-10 max-w-7xl mx-auto px-3 sm:px-6 pt-2 pb-16">
     <div class="bg-white/95 rounded-2xl p-3 sm:px-5 shadow-lg border-2 border-white mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
         <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-xl font-extrabold text-xs sm:text-sm flex items-center gap-2">
           <span>Room: <strong id="gwRoomCodeDisplay" class="tracking-widest text-base">XXXXX</strong></span>
           <button onclick="copyRoomCode('gwRoomCodeDisplay')" class="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-xs hover:bg-blue-700">Copy</button>
@@ -292,7 +302,7 @@
         </div>
       </div>
 
-      <button id="gwFinalGuessBtn" onclick="toggleGwFinalGuess()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition">
+      <button id="gwFinalGuessBtn" onclick="toggleGwFinalGuess()" class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition">
         🎯 Make Final Guess
       </button>
     </div>
@@ -318,7 +328,7 @@
           </div>
         </div>
 
-        <div class="bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[410px]">
+        <div class="bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[320px] sm:h-[410px]">
           <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
             <span class="font-extrabold text-sm text-slate-700">💬 Room Chat</span>
             <span class="text-[11px] font-bold text-slate-400">Ask Yes/No Questions</span>
@@ -438,9 +448,9 @@
         </div>
 
         <!-- Guess Results Table -->
-        <div class="bg-white/95 rounded-3xl p-3 sm:p-5 shadow-xl border-4 border-white overflow-x-auto">
-          <div class="min-w-[640px]">
-            <div class="grid grid-cols-7 gap-2 text-center font-extrabold text-xs uppercase tracking-wider text-slate-600 pb-2.5 border-b-2 border-slate-100">
+        <div class="bg-white/95 rounded-3xl p-2.5 sm:p-5 shadow-xl border-4 border-white overflow-x-auto">
+          <div class="w-full sm:min-w-[640px]">
+            <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center font-extrabold text-[9px] sm:text-xs uppercase tracking-tight sm:tracking-wider text-slate-600 pb-2 sm:pb-2.5 border-b-2 border-slate-100">
               <div>Photo</div>
               <div>Name</div>
               <div id="wdDynamicColHeader" class="text-blue-700">Material</div>
@@ -468,7 +478,7 @@
 
       <!-- Right Sidebar: Multiplayer Chat & Icon Guide -->
       <div class="lg:col-span-4 flex flex-col gap-4">
-        <div id="wdChatCard" class="hidden bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[420px]">
+        <div id="wdChatCard" class="hidden bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[320px] sm:h-[420px]">
           <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
             <span class="font-extrabold text-sm text-slate-700">💬 Race Chat</span>
             <span class="text-[11px] font-bold text-emerald-600">Live Room</span>
@@ -514,13 +524,13 @@
       <div id="goEmoji" class="text-5xl mb-2">🎉</div>
       <h3 id="goTitle" class="font-logo text-3xl font-bold text-slate-800">Victory!</h3>
       <p id="goSubtitle" class="text-sm font-bold text-slate-600 mt-1 mb-4"></p>
-      <div class="flex justify-center gap-4 mb-5">
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center w-32">
+      <div class="flex justify-center gap-2.5 sm:gap-4 mb-5">
+        <div class="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200 text-center w-28 sm:w-32">
           <div class="text-[10px] font-extrabold uppercase text-slate-400">Your Secret</div>
           <img id="goMyImg" src="" class="w-16 h-16 mx-auto rounded-xl object-cover object-top my-1.5 border border-slate-200" />
           <div id="goMyName" class="font-extrabold text-xs text-slate-800"></div>
         </div>
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center w-32">
+        <div class="bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200 text-center w-28 sm:w-32">
           <div class="text-[10px] font-extrabold uppercase text-slate-400">Opponent Secret</div>
           <img id="goOppImg" src="" class="w-16 h-16 mx-auto rounded-xl object-cover object-top my-1.5 border border-slate-200" />
           <div id="goOppName" class="font-extrabold text-xs text-slate-800"></div>
@@ -693,7 +703,7 @@
 
                 <div>
                   <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Vision (Element)</label>
-                  <div id="admVisionPicker" class="grid grid-cols-7 gap-1.5"></div>
+                  <div id="admVisionPicker" class="grid grid-cols-4 sm:grid-cols-7 gap-1.5"></div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1568,33 +1578,33 @@ function submitWdGuess(charId) {
 
   let dynCellInner = '';
   if (wdState.dynamicType === 'stat') {
-    dynCellInner = `<span class="text-xs font-extrabold leading-tight px-1">${guess.stat}</span>`;
+    dynCellInner = `<span class="text-[9px] sm:text-xs font-extrabold leading-tight px-0.5 sm:px-1 break-words">${guess.stat}</span>`;
   } else {
-    dynCellInner = `<div class="bg-white/95 p-1.5 rounded-xl shadow-sm flex items-center justify-center">${getIconSvg(wdState.dynamicType, guess[wdState.dynamicType], 28)}</div>`;
+    dynCellInner = `<div class="bg-white/95 p-1 sm:p-1.5 rounded-lg sm:rounded-xl shadow-sm flex items-center justify-center scale-75 sm:scale-100">${getIconSvg(wdState.dynamicType, guess[wdState.dynamicType], 28)}</div>`;
   }
 
   const bgClass = (ok) => ok ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-rose-500 text-white border-rose-600';
   const verBg = verStatus === 'green' ? 'bg-emerald-500 border-emerald-600' : (verStatus === 'yellow' ? 'bg-amber-400 text-slate-900 border-amber-500' : 'bg-rose-500 border-rose-600');
 
   const rowHtml = `
-    <div class="grid grid-cols-7 gap-2 items-center text-center wd-cell-anim">
-      <div class="aspect-square rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 mx-auto w-14 h-14">
+    <div class="grid grid-cols-7 gap-1 sm:gap-2 items-center text-center wd-cell-anim">
+      <div class="aspect-square rounded-xl sm:rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 mx-auto w-10 h-10 sm:w-14 sm:h-14">
         <img src="${guess.img}" class="w-full h-full" style="${getCharImgStyle(guess)}" />
       </div>
-      <div class="h-14 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xs px-1 ${bgClass(nameMatch)}">${guess.name}</div>
-      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
-      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(regMatch)}" title="${guess.region}">
-        <div class="bg-slate-800 p-1 rounded-xl flex items-center justify-center shadow-sm">${getIconSvg('region', guess.region, 28)}</div>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center font-extrabold text-[10px] sm:text-xs leading-tight px-0.5 sm:px-1 break-words overflow-hidden ${bgClass(nameMatch)}">${guess.name}</div>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center px-0.5 ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center ${bgClass(regMatch)}" title="${guess.region}">
+        <div class="bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl flex items-center justify-center shadow-sm scale-75 sm:scale-100">${getIconSvg('region', guess.region, 28)}</div>
       </div>
-      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(visMatch)}" title="${guess.vision}">
-        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('vision', guess.vision, 28)}</div>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center ${bgClass(visMatch)}" title="${guess.vision}">
+        <div class="bg-white/95 p-1 sm:p-1.5 rounded-lg sm:rounded-xl flex items-center justify-center scale-75 sm:scale-100">${getIconSvg('vision', guess.vision, 28)}</div>
       </div>
-      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(wepMatch)}" title="${guess.weapon}">
-        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('weapon', guess.weapon, 28)}</div>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex items-center justify-center ${bgClass(wepMatch)}" title="${guess.weapon}">
+        <div class="bg-white/95 p-1 sm:p-1.5 rounded-lg sm:rounded-xl flex items-center justify-center scale-75 sm:scale-100">${getIconSvg('weapon', guess.weapon, 28)}</div>
       </div>
-      <div class="h-14 rounded-2xl border-2 flex flex-col items-center justify-center font-extrabold text-white ${verBg}">
-        <span class="text-sm leading-none">${verArrow}</span>
-        <span class="text-xs mt-0.5">${guess.version}</span>
+      <div class="h-11 sm:h-14 rounded-xl sm:rounded-2xl border-2 flex flex-col items-center justify-center font-extrabold text-white ${verBg}">
+        <span class="text-xs sm:text-sm leading-none">${verArrow}</span>
+        <span class="text-[10px] sm:text-xs mt-0.5">${guess.version}</span>
       </div>
     </div>
   `;
