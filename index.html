@@ -731,33 +731,19 @@ if (FIREBASE_CONFIG.databaseURL) {
 /* ============================================================================
    2. DYNAMIC TAXONOMIES & CUSTOM UPLOADED LOGOS (SYNCED WITH FIREBASE)
    ============================================================================ */
-const BASE_VISIONS = ["Pyro", "Hydro", "Anemo", "Electro", "Dendro", "Cryo", "Geo"];
-const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
-const BASE_REGIONS = ["Mondstadt", "Liyue", "Inazuma", "Sumeru", "Fontaine", "Natlan", "Snezhnaya"];
-const BASE_MATERIALS = [
-  "Cecilia", "Windwheel Aster", "Valberry", "Cor Lapis", "Glaze Lily",
-  "Qingxin", "Silk Flower", "Sakura Bloom", "Naku Weed", "Onikabuto",
-  "Kalpalata Lotus", "Scarab", "Padisarah", "Lumidouce Bell", "Lakelight Lily",
-  "Subdetection Unit", "Saurian Claw Succulent", "Sprayfeather Gill"
-];
-const BASE_BOSSES = [
-  "Dvalin's Sigh", "Boreas's Ring", "Shadow of the Warrior", "Bloodjade Branch",
-  "Ashen Heart", "Mudra of the Malefic General", "Puppet Strings", "Worldspan Fern",
-  "Everamber", "Lightless Eye", "Silken Feather", "Eroded Horn"
-];
+  const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
 const STATS = [
   "CRIT Rate%", "CRIT DMG%", "ATK%", "HP%", "DEF%",
   "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
   "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
 ];
 
-// Live merged taxonomies (Base + Custom from Firebase)
 let TAXONOMIES = {
-  visions: [...BASE_VISIONS],
-  regions: [...BASE_REGIONS],
-  materials: [...BASE_MATERIALS],
-  bosses: [...BASE_BOSSES],
-  customIcons: {} // key: "vision:Pyro" -> "https://res.cloudinary.com/..."
+  visions: [],
+  regions: [],
+  materials: [],
+  bosses: [],
+  customIcons: {}
 };
 
 function getDynamicVersions() {
