@@ -1740,15 +1740,79 @@ function renderAdminTaxList() {
   const singularType = { visions: 'vision', regions: 'region', materials: 'material', bosses: 'boss' }[cat];
   const items = TAXONOMIES[cat] || [];
 
-  document.getElementById('adminTaxList').innerHTML = items.map(item => `
-    <button type="button" onclick="selectTaxForIconEdit('${item.replace(/'/g, "\\'")}')"
-      class="flex items-center gap-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 p-2 rounded-xl text-left transition">
-      <span class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-        ${getIconSvg(singularType, item, 22)}
-      </span>
-      <span class="font-extrabold text-xs text-slate-700 truncate">${item}</span>
-    </button>
-  `).join('');
+  document.getElementById('adminTaxList').innerHTML = items.map(item => {
+    const safeEscaped = item.replace(/'/g, "\\'");
+    return `
+      <div class="flex items-center justify-between gap-1.5 bg-slate-50 border border-slate-200 p-2 rounded-xl">
+        <button type="button" onclick="selectTaxForIconEdit('${safeEscaped}')" title="Click to replace logo"
+          class="flex items-center gap-2 min-w-0 flex-1 text-left hover:text-blue-600">
+          <span class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+            ${getIconSvg(singularType, item, 22)}
+          </span>
+          <span class="font-extrabold text-xs text-slate-700 truncate">${item}</span>
+        </button>
+        <div class="flex items-center gap-1 shrink-0">
+          <button type="button" onclick="renameAdminTaxonomy('${cat}', '${safeEscaped}')" title="Rename"
+            class="px-1.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg font-extrabold text-[10px]">✏️</button>
+          <button type="button" onclick="deleteAdminTaxonomy('${cat}', '${safeEscaped}')" title="Delete"
+            class="px-1.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-extrabold text-[10px]">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renameAdminTaxonomy(cat, oldName) {
+  const newName = prompt(`Rename "${oldName}" to:`, oldName)?.trim();
+  if (!newName || newName === oldName) return;
+
+  const singularType = { visions: 'vision', regions: 'region', materials: 'material', bosses: 'boss' }[cat];
+  const oldKey = oldName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const newKey = newName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const existingIcon = TAXONOMIES.customIcons[`${singularType}:${oldName}`] || null;
+
+  if (isCloudConnected) {
+    db.ref(`taxonomies/${cat}/${oldKey}`).remove();
+    db.ref(`taxonomies/${cat}/${newKey}`).set(newName);
+    if (existingIcon) {
+      db.ref(`taxonomies/customIcons/${singularType}:${oldName}`).remove();
+      db.ref(`taxonomies/customIcons/${singularType}:${newName}`).set(existingIcon);
+    }
+    // Also update any characters currently using the old boss/material/region/vision name
+    CHARACTERS.forEach(c => {
+      if (c[singularType] === oldName) {
+        db.ref(`characters/${c.id}/${singularType}`).set(newName);
+      }
+    });
+  } else {
+    TAXONOMIES[cat] = TAXONOMIES[cat].map(x => x === oldName ? newName : x);
+    if (existingIcon) {
+      delete TAXONOMIES.customIcons[`${singularType}:${oldName}`];
+      TAXONOMIES.customIcons[`${singularType}:${newName}`] = existingIcon;
+    }
+    CHARACTERS.forEach(c => { if (c[singularType] === oldName) c[singularType] = newName; });
+    localStorage.setItem('teyvat_tax_v2', JSON.stringify(TAXONOMIES));
+    localStorage.setItem('teyvat_roster_v2', JSON.stringify(CHARACTERS));
+    populateAdminPickers();
+    renderAdminTaxList();
+  }
+}
+
+function deleteAdminTaxonomy(cat, name) {
+  if (!confirm(`Delete "${name}" from ${cat}?`)) return;
+  const singularType = { visions: 'vision', regions: 'region', materials: 'material', bosses: 'boss' }[cat];
+  const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+  if (isCloudConnected) {
+    db.ref(`taxonomies/${cat}/${key}`).remove();
+    db.ref(`taxonomies/customIcons/${singularType}:${name}`).remove();
+  } else {
+    TAXONOMIES[cat] = TAXONOMIES[cat].filter(x => x !== name);
+    delete TAXONOMIES.customIcons[`${singularType}:${name}`];
+    localStorage.setItem('teyvat_tax_v2', JSON.stringify(TAXONOMIES));
+    populateAdminPickers();
+    renderAdminTaxList();
+  }
 }
 
 function saveAdminCharacter(e) {
