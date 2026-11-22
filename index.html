@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teyvat Game Hub — Genshin Guess Who? & Genshindle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Firebase Compat SDKs for Single-File Hosting -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --sky-top: #3ca3f4;
+      --sky-mid: #7ac5fc;
+      --sky-bot: #bfe6ff;
+    }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 58%, var(--sky-bot) 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #1e293b;
+    }
+    .font-logo { font-family: 'Fredoka', sans-serif; }
+
+    /* Clouds & Meadow */
+    .cloud {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 9999px;
+      pointer-events: none;
+      z-index: 0;
+      box-shadow: 0 8px 20px rgba(28, 110, 180, 0.12);
+    }
+    .cloud::before, .cloud::after {
+      content: '';
+      position: absolute;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .cloud-1 { width: 220px; height: 64px; top: 8%; left: 6%; }
+    .cloud-1::before { width: 95px; height: 95px; top: -46px; left: 32px; }
+    .cloud-1::after { width: 72px; height: 72px; top: -30px; right: 34px; }
+    .cloud-2 { width: 260px; height: 72px; top: 14%; right: 8%; }
+    .cloud-2::before { width: 110px; height: 110px; top: -52px; right: 42px; }
+    .cloud-2::after { width: 80px; height: 80px; top: -34px; left: 38px; }
+
+    .meadow-bg {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 180px;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .hill-back {
+      position: absolute; bottom: -45px; left: -10%;
+      width: 65%; height: 170px;
+      background: #67c947; border-radius: 50% 50% 0 0;
+    }
+    .hill-front {
+      position: absolute; bottom: -55px; right: -10%;
+      width: 72%; height: 190px;
+      background: #52b838; border-radius: 50% 50% 0 0;
+    }
+
+    .gw-title-red {
+      color: #ef233c;
+      -webkit-text-stroke: 2.5px #ffffff;
+      text-shadow: 0 5px 0 #1d4ed8, 0 8px 16px rgba(15, 23, 42, 0.25);
+    }
+    .gw-title-blue {
+      color: #2563eb;
+      -webkit-text-stroke: 2.5px #ffffff;
+      text-shadow: 0 5px 0 #1e3a8a, 0 8px 16px rgba(15, 23, 42, 0.25);
+    }
+
+    /* Portrait-Only Guess Who Tile */
+    .gw-tile {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      border: 3px solid #ffffff;
+      background: #cbd5e1;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.2s ease, opacity 0.2s ease;
+      user-select: none;
+    }
+    .gw-tile:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.24);
+      z-index: 5;
+    }
+    .gw-tile img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+      display: block;
+    }
+    .gw-tile.eliminated {
+      filter: grayscale(100%) brightness(0.45);
+      opacity: 0.55;
+      transform: scale(0.95);
+    }
+    .gw-tile.eliminated::after {
+      content: '✕';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; font-weight: 900;
+      color: rgba(255, 255, 255, 0.88);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
+    }
+    .gw-tile.secret-picked {
+      border-color: #facc15;
+      box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.7), 0 8px 18px rgba(0, 0, 0, 0.25);
+      transform: scale(1.04);
+    }
+    .gw-tile.guess-mode:not(.eliminated):hover {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.65);
+    }
+
+    @keyframes flipIn {
+      0% { transform: rotateX(90deg) scale(0.92); opacity: 0; }
+      100% { transform: rotateX(0deg) scale(1); opacity: 1; }
+    }
+    .wd-cell-anim { animation: flipIn 0.35s ease forwards; }
+
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb { background: rgba(37, 99, 235, 0.45); border-radius: 999px; }
+  </style>
+</head>
+<body class="relative selection:bg-blue-500 selection:text-white">
+
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="meadow-bg">
+    <div class="hill-back"></div>
+    <div class="hill-front"></div>
+  </div>
+
+  <!-- Top Navigation -->
+  <header class="relative z-20 flex items-center justify-between px-4 sm:px-6 pt-4 pb-2">
+    <div class="flex items-center gap-2.5">
+      <button id="homeBtn" onclick="navigateTo('portal')" class="hidden bg-white/95 hover:bg-white text-slate-800 font-extrabold text-sm px-3.5 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
+        <span>🏠</span> Home
+      </button>
+      <button onclick="openAdminModal()" class="bg-white/95 hover:bg-white text-blue-700 font-extrabold text-sm px-3.5 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
+        <span>⚙️</span> Admin Dashboard
+      </button>
+    </div>
+
+    <div class="flex items-center gap-2 bg-white/90 backdrop-blur px-3.5 py-1.5 rounded-full shadow text-xs font-extrabold text-slate-700">
+      <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+      <span id="cloudStatusText">Local Mode</span>
+      <span class="text-slate-300">|</span>
+      <span id="rosterCountText">0 Characters</span>
+    </div>
+  </header>
+
+  <!-- ==================== 1. PORTAL / LANDING PAGE ==================== -->
+  <main id="portalView" class="relative z-10 max-w-5xl mx-auto px-4 pt-4 pb-20 flex flex-col items-center">
+    <div class="text-center mb-8">
+      <div class="inline-block bg-white/90 text-blue-700 font-extrabold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm mb-3">
+        Teyvat Mini-Game Hub
+      </div>
+      <h1 class="font-logo text-5xl sm:text-6xl font-bold tracking-tight gw-title-red">
+        Genshin <span class="gw-title-blue">Arcade</span>
+      </h1>
+      <p class="mt-3 text-slate-800 font-bold text-base sm:text-lg max-w-xl mx-auto bg-white/75 backdrop-blur-sm px-5 py-2 rounded-2xl shadow-sm">
+        Test your Teyvat ball knowledge in 2-player deduction or character Wordle!
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+      <!-- Game Card 1: Genshin Guess Who -->
+      <div class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-7 shadow-xl border-4 border-white flex flex-col justify-between hover:-translate-y-1 transition duration-200">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="bg-red-100 text-red-700 font-extrabold text-xs px-3 py-1 rounded-full uppercase">2-Player Room Code</span>
+            <span class="text-2xl">🕵️‍♂️</span>
+          </div>
+          <h2 class="font-logo text-3xl font-bold text-slate-800 mb-2">Genshin Guess Who?</h2>
+          <p class="text-slate-600 font-semibold text-sm leading-relaxed mb-5">
+            Create a private room with a 5-letter code, choose <strong>All</strong>, <strong>4-Stars</strong>, or <strong>5-Stars</strong>, and deduce your opponent's secret character through live chat. Pure visual recognition—no name tags, no element badges, no auto-filters!
+          </p>
+        </div>
+        <button onclick="navigateTo('gwLobby')" class="w-full py-3.5 px-5 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-extrabold rounded-2xl shadow-lg shadow-red-500/25 transition text-base">
+          Play Guess Who? →
+        </button>
+      </div>
+
+      <!-- Game Card 2: Genshindle -->
+      <div class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-7 shadow-xl border-4 border-white flex flex-col justify-between hover:-translate-y-1 transition duration-200">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="bg-blue-100 text-blue-700 font-extrabold text-xs px-3 py-1 rounded-full uppercase">Solo & Multiplayer Race</span>
+            <span class="text-2xl">🧩</span>
+          </div>
+          <h2 class="font-logo text-3xl font-bold text-slate-800 mb-2">Genshindle</h2>
+          <p class="text-slate-600 font-semibold text-sm leading-relaxed mb-5">
+            Guess the mystery character in 5 tries using <strong>Region, Vision, Weapon, Version</strong> logos, plus a rotating <strong>Material / Weekly Boss / Ascension Stat</strong> clue! Play Endless Streak solo or race a friend with live Green/Yellow progress tracking.
+          </p>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="startGenshindleSolo()" class="py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-lg shadow-blue-600/25 transition text-sm sm:text-base">
+            Single Player
+          </button>
+          <button onclick="navigateTo('wdLobby')" class="py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-600/25 transition text-sm sm:text-base">
+            Multiplayer
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== 2. GUESS WHO LOBBY ==================== -->
+  <section id="gwLobbyView" class="hidden relative z-10 max-w-3xl mx-auto px-4 pt-4 pb-20">
+    <div class="text-center mb-6">
+      <h1 class="font-logo text-4xl sm:text-5xl font-bold gw-title-red">Guess <span class="gw-title-blue">Who?</span></h1>
+      <p class="text-slate-800 font-bold text-sm mt-1">Create a 2-player room or join with a code</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white/95 rounded-3xl p-6 shadow-xl border-4 border-white">
+        <h2 class="font-logo text-2xl font-bold text-slate-800 mb-4">Create Room</h2>
+        <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">Your Name</label>
+        <input id="gwCreateName" type="text" value="Traveler" maxlength="16" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-4" />
+
+        <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">Character Pool</label>
+        <div class="grid grid-cols-3 gap-2 mb-5">
+          <button type="button" data-pool="all" onclick="selectGwPool('all')" class="gw-pool-btn py-2.5 px-2 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-700 font-extrabold text-xs">All Chars</button>
+          <button type="button" data-pool="4" onclick="selectGwPool('4')" class="gw-pool-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">4★ Only</button>
+          <button type="button" data-pool="5" onclick="selectGwPool('5')" class="gw-pool-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">5★ Only</button>
+        </div>
+
+        <button onclick="createGwRoom()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md transition">
+          Create Room & Get Code
+        </button>
+      </div>
+
+      <div class="bg-white/95 rounded-3xl p-6 shadow-xl border-4 border-white flex flex-col justify-between">
+        <div>
+          <h2 class="font-logo text-2xl font-bold text-slate-800 mb-4">Join Room</h2>
+          <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">Your Name</label>
+          <input id="gwJoinName" type="text" value="Paimon" maxlength="16" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-4" />
+
+          <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">5-Letter Room Code</label>
+          <input id="gwJoinCode" type="text" placeholder="e.g. VNT42" maxlength="5" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-extrabold text-base uppercase tracking-widest mb-4" />
+        </div>
+        <button onclick="joinGwRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-md transition">
+          Join Room
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 3. GUESS WHO GAME BOARD ==================== -->
+  <section id="gwGameView" class="hidden relative z-10 max-w-7xl mx-auto px-3 sm:px-6 pt-2 pb-16">
+    <div class="bg-white/95 rounded-2xl p-3 sm:px-5 shadow-lg border-2 border-white mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-xl font-extrabold text-xs sm:text-sm flex items-center gap-2">
+          <span>Room: <strong id="gwRoomCodeDisplay" class="tracking-widest text-base">XXXXX</strong></span>
+          <button onclick="copyRoomCode('gwRoomCodeDisplay')" class="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-xs hover:bg-blue-700">Copy</button>
+        </div>
+        <span id="gwPoolBadge" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl font-extrabold text-xs">Pool: All</span>
+        <span id="gwOppNameBadge" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-xl font-extrabold text-xs">Waiting for P2...</span>
+      </div>
+
+      <div class="flex items-center gap-3 sm:gap-5">
+        <div class="bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold text-emerald-800">
+          Your Board: <span id="gwMyCount" class="text-base">0</span> left
+        </div>
+        <div class="bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl text-xs sm:text-sm font-extrabold text-amber-800">
+          Opponent: <span id="gwOppCount" class="text-base">0</span> left
+        </div>
+      </div>
+
+      <button id="gwFinalGuessBtn" onclick="toggleGwFinalGuess()" class="bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition">
+        🎯 Make Final Guess
+      </button>
+    </div>
+
+    <div id="gwSelectBanner" class="bg-amber-400 text-slate-900 font-extrabold text-center py-2.5 px-4 rounded-2xl shadow-md mb-4 text-sm sm:text-base">
+      👇 Click any portrait below to lock in YOUR secret character!
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div class="lg:col-span-8 bg-white/80 backdrop-blur-sm p-3 sm:p-4 rounded-3xl shadow-xl border-4 border-white">
+        <div id="gwBoardGrid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5"></div>
+      </div>
+
+      <div class="lg:col-span-4 flex flex-col gap-4">
+        <div class="bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex items-center gap-4">
+          <div id="gwMySecretPreview" class="w-16 h-16 rounded-2xl bg-slate-200 border-2 border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
+            <span class="text-2xl">❓</span>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold uppercase text-slate-400">Your Secret Character</div>
+            <div id="gwMySecretName" class="font-logo text-xl font-bold text-slate-800">Not Selected</div>
+            <div id="gwPhaseHint" class="text-xs font-bold text-blue-600 mt-0.5">Pick a tile on the board to start</div>
+          </div>
+        </div>
+
+        <div class="bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[410px]">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <span class="font-extrabold text-sm text-slate-700">💬 Room Chat</span>
+            <span class="text-[11px] font-bold text-slate-400">Ask Yes/No Questions</span>
+          </div>
+
+          <div id="gwChatMessages" class="flex-1 overflow-y-auto space-y-2 pr-1 text-sm mb-3"></div>
+
+          <div class="flex items-center gap-1.5 mb-2">
+            <button onclick="sendGwQuickReply('Yes! ✅')" class="flex-1 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-extrabold text-xs rounded-xl transition">Yes</button>
+            <button onclick="sendGwQuickReply('No! ❌')" class="flex-1 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 font-extrabold text-xs rounded-xl transition">No</button>
+            <button onclick="sendGwQuickReply('Maybe / IDK 🤷')" class="flex-1 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 font-extrabold text-xs rounded-xl transition">Maybe / IDK</button>
+          </div>
+
+          <form onsubmit="sendGwChat(event)" class="flex gap-2">
+            <input id="gwChatInput" type="text" placeholder="Type a question..." class="flex-1 px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-bold" />
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl text-sm">Send</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. GENSHINDLE MULTIPLAYER LOBBY ==================== -->
+  <section id="wdLobbyView" class="hidden relative z-10 max-w-3xl mx-auto px-4 pt-4 pb-20">
+    <div class="text-center mb-6">
+      <h1 class="font-logo text-4xl sm:text-5xl font-bold gw-title-blue">Genshindle <span class="gw-title-red">Race</span></h1>
+      <p class="text-slate-800 font-bold text-sm mt-1">Same secret character, live timer, and real-time Green/Yellow progress</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white/95 rounded-3xl p-6 shadow-xl border-4 border-white flex flex-col justify-between">
+        <div>
+          <h2 class="font-logo text-2xl font-bold text-slate-800 mb-4">Create Race Room</h2>
+          <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">Your Name</label>
+          <input id="wdCreateName" type="text" value="Traveler" maxlength="16" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-4" />
+        </div>
+        <button onclick="createWdRoom()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md transition">
+          Create Room & Start Race
+        </button>
+      </div>
+
+      <div class="bg-white/95 rounded-3xl p-6 shadow-xl border-4 border-white flex flex-col justify-between">
+        <div>
+          <h2 class="font-logo text-2xl font-bold text-slate-800 mb-4">Join Race Room</h2>
+          <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">Your Name</label>
+          <input id="wdJoinName" type="text" value="Klee" maxlength="16" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-4" />
+          <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1.5">5-Letter Room Code</label>
+          <input id="wdJoinCode" type="text" placeholder="e.g. KLEE9" maxlength="5" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-extrabold text-base uppercase tracking-widest mb-4" />
+        </div>
+        <button onclick="joinWdRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-md transition">
+          Join Race
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5. GENSHINDLE GAME VIEW ==================== -->
+  <section id="wdGameView" class="hidden relative z-10 max-w-7xl mx-auto px-3 sm:px-6 pt-2 pb-20">
+    <!-- Opponent Finished Non-Blocking Banner -->
+    <div id="wdOppWonBanner" class="hidden bg-amber-400 border-2 border-amber-500 text-slate-900 rounded-2xl p-3.5 mb-4 shadow-lg flex flex-wrap items-center justify-between gap-3">
+      <div class="font-extrabold text-sm sm:text-base">
+        🏆 <span id="wdOppWonText">Opponent solved the character!</span> Keep going to finish yours, or jump to the next round.
+      </div>
+      <button onclick="giveUpAndNextWdRound()" class="bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow">
+        Give Up & Next Round →
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div class="lg:col-span-8 flex flex-col gap-4">
+        <div class="bg-white/95 rounded-3xl p-4 sm:p-5 shadow-xl border-4 border-white">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div>
+              <span id="wdModeBadge" class="bg-blue-100 text-blue-700 font-extrabold text-xs px-3 py-1 rounded-full uppercase">Endless Single Player</span>
+              <h2 class="font-logo text-3xl font-bold text-slate-800 mt-1">Genshindle</h2>
+            </div>
+
+            <div id="wdSoloStats" class="flex items-center gap-3">
+              <div class="bg-slate-100 px-3.5 py-2 rounded-2xl text-center">
+                <div class="text-[10px] font-extrabold uppercase text-slate-400">Streak</div>
+                <div id="wdStreakVal" class="font-logo text-xl font-bold text-blue-600">0</div>
+              </div>
+              <div class="bg-amber-50 border border-amber-200 px-3.5 py-2 rounded-2xl text-center">
+                <div class="text-[10px] font-extrabold uppercase text-amber-600">Session Best</div>
+                <div id="wdHighscoreVal" class="font-logo text-xl font-bold text-amber-700">0</div>
+              </div>
+            </div>
+
+            <div id="wdMultiStats" class="hidden flex flex-wrap items-center gap-2">
+              <div class="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-xl text-xs font-extrabold text-blue-800 flex items-center gap-1.5">
+                <span>Room: <strong id="wdRoomCodeDisplay" class="tracking-widest">XXXXX</strong></span>
+                <button onclick="copyRoomCode('wdRoomCodeDisplay')" class="bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px]">Copy</button>
+              </div>
+              <div class="bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold">
+                ⏱️ <span id="wdTimerDisplay">00:00</span>
+              </div>
+              <div class="bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-xl text-xs font-extrabold text-purple-900">
+                <span id="wdOppNameLabel">Opponent</span>: <span id="wdOppTries">0/5</span> • 🟩 <span id="wdOppGreens">0</span> 🟨 <span id="wdOppYellows">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <input id="wdSearchInput" type="text" oninput="filterWdGrid()" placeholder="Search character by name or click a portrait below..." class="flex-1 px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm" />
+            <div class="bg-slate-100 px-4 py-3 rounded-2xl font-extrabold text-sm text-slate-700 text-center shrink-0">
+              Tries: <span id="wdTriesCount" class="text-blue-600">0</span>/5
+            </div>
+          </div>
+
+          <!-- Compact Selectable Character Grid -->
+          <div class="mt-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-2.5 max-h-44 overflow-y-auto">
+            <div id="wdQuickPickGrid" class="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-1.5"></div>
+          </div>
+        </div>
+
+        <!-- Guess Results Table -->
+        <div class="bg-white/95 rounded-3xl p-3 sm:p-5 shadow-xl border-4 border-white overflow-x-auto">
+          <div class="min-w-[640px]">
+            <div class="grid grid-cols-7 gap-2 text-center font-extrabold text-xs uppercase tracking-wider text-slate-600 pb-2.5 border-b-2 border-slate-100">
+              <div>Photo</div>
+              <div>Name</div>
+              <div id="wdDynamicColHeader" class="text-blue-700">Material</div>
+              <div>Region</div>
+              <div>Vision</div>
+              <div>Weapon</div>
+              <div>Version</div>
+            </div>
+
+            <div id="wdGuessRows" class="space-y-2 mt-2.5">
+              <div class="text-center py-8 text-slate-400 font-bold text-sm">
+                Select any character above to make your first guess!
+              </div>
+            </div>
+          </div>
+
+          <div id="wdRoundOverBar" class="hidden mt-4 pt-4 border-t-2 border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div id="wdRoundResultMsg" class="font-extrabold text-base text-slate-800"></div>
+            <button onclick="startNextWdRound()" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-5 py-2.5 rounded-xl shadow transition">
+              Next Character →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar: Multiplayer Chat & Icon Guide -->
+      <div class="lg:col-span-4 flex flex-col gap-4">
+        <div id="wdChatCard" class="hidden bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white flex flex-col h-[420px]">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <span class="font-extrabold text-sm text-slate-700">💬 Race Chat</span>
+            <span class="text-[11px] font-bold text-emerald-600">Live Room</span>
+          </div>
+          <div id="wdChatMessages" class="flex-1 overflow-y-auto space-y-2 pr-1 text-sm mb-3"></div>
+          <form onsubmit="sendWdChat(event)" class="flex gap-2">
+            <input id="wdChatInput" type="text" placeholder="Trash talk or give hints..." class="flex-1 px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none text-sm font-bold" />
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-4 py-2 rounded-xl text-sm">Send</button>
+          </form>
+        </div>
+
+        <div class="bg-white/95 rounded-3xl p-4 shadow-xl border-4 border-white">
+          <h3 class="font-extrabold text-sm text-slate-800 mb-2">📖 Clue Legend</h3>
+          <ul class="text-xs font-bold text-slate-600 space-y-1.5">
+            <li><span class="inline-block w-3 h-3 rounded bg-emerald-500 mr-1.5 align-middle"></span><strong>Green:</strong> Exact match!</li>
+            <li><span class="inline-block w-3 h-3 rounded bg-amber-400 mr-1.5 align-middle"></span><strong>Yellow (Version):</strong> Within ±0.3 patches!</li>
+            <li><span class="inline-block w-3 h-3 rounded bg-rose-500 mr-1.5 align-middle"></span><strong>Red:</strong> No match (hover any icon to see its name).</li>
+            <li class="pt-1 text-blue-700">🔄 Column 3 rotates every round between <strong>Local Specialty</strong> (icon), <strong>Weekly Boss</strong> (icon), and <strong>Ascension Stat</strong> (text).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FINAL GUESS CONFIRMATION MODAL ==================== -->
+  <div id="finalGuessModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-4 border-white">
+      <div class="w-24 h-24 mx-auto rounded-2xl overflow-hidden border-4 border-rose-500 shadow-md mb-3">
+        <img id="fgModalImg" src="" alt="" class="w-full h-full object-cover object-top" />
+      </div>
+      <h3 class="font-logo text-2xl font-bold text-slate-800">Lock In Final Guess?</h3>
+      <p class="text-sm font-bold text-slate-600 mt-1">Are you sure your opponent picked <strong id="fgModalName" class="text-rose-600"></strong>? If you're wrong, you lose the round!</p>
+      <div class="grid grid-cols-2 gap-3 mt-5">
+        <button onclick="closeFinalGuessModal()" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-700 text-sm">Cancel</button>
+        <button onclick="confirmFinalGuess()" class="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 font-extrabold text-white text-sm shadow">Yes, Guess!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== GAME OVER MODAL ==================== -->
+  <div id="gameOverModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-4 border-white">
+      <div id="goEmoji" class="text-5xl mb-2">🎉</div>
+      <h3 id="goTitle" class="font-logo text-3xl font-bold text-slate-800">Victory!</h3>
+      <p id="goSubtitle" class="text-sm font-bold text-slate-600 mt-1 mb-4"></p>
+      <div class="flex justify-center gap-4 mb-5">
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center w-32">
+          <div class="text-[10px] font-extrabold uppercase text-slate-400">Your Secret</div>
+          <img id="goMyImg" src="" class="w-16 h-16 mx-auto rounded-xl object-cover object-top my-1.5 border border-slate-200" />
+          <div id="goMyName" class="font-extrabold text-xs text-slate-800"></div>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-center w-32">
+          <div class="text-[10px] font-extrabold uppercase text-slate-400">Opponent Secret</div>
+          <img id="goOppImg" src="" class="w-16 h-16 mx-auto rounded-xl object-cover object-top my-1.5 border border-slate-200" />
+          <div id="goOppName" class="font-extrabold text-xs text-slate-800"></div>
+        </div>
+      </div>
+      <button onclick="closeGameOverModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow">
+        Back to Lobby
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN DASHBOARD MODAL ==================== -->
+  <div id="adminModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border-4 border-white my-auto max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+        <div>
+          <h2 class="font-logo text-2xl sm:text-3xl font-bold text-slate-800">⚙️ Admin Character Manager</h2>
+          <p class="text-xs font-bold text-slate-500">Add or edit characters — changes publish live for all players!</p>
+        </div>
+        <button onclick="closeAdminModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-3.5 py-2 rounded-xl text-sm">✕ Close</button>
+      </div>
+
+      <!-- Admin Password Lock Screen -->
+      <div id="adminLockBox" class="max-w-sm mx-auto py-8 text-center">
+        <div class="text-4xl mb-2">🔐</div>
+        <h3 class="font-logo text-xl font-bold text-slate-800 mb-1">Admin Verification</h3>
+        <p class="text-xs font-bold text-slate-500 mb-4">Enter your admin passcode to publish global roster updates.</p>
+        <input id="adminPassInput" type="password" placeholder="Admin Passcode (default: mehul2026)" class="w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-3 text-center" />
+        <button onclick="unlockAdmin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow text-sm">
+          Unlock Dashboard
+        </button>
+      </div>
+
+      <!-- Unlocked Admin Form + Roster List -->
+      <div id="adminContentBox" class="hidden">
+        <form id="adminCharForm" onsubmit="saveAdminCharacter(event)" class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 id="adminFormTitle" class="font-extrabold text-base text-blue-700">➕ Add New Character (Goes Live Globally)</h3>
+            <button type="button" id="adminCancelEditBtn" onclick="resetAdminForm()" class="hidden text-xs font-extrabold text-rose-600 hover:underline">Cancel Edit</button>
+          </div>
+          <input type="hidden" id="adminEditId" value="" />
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+            <!-- Left: Name & Photo Upload -->
+            <div class="md:col-span-4 flex flex-col gap-3">
+              <div>
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">1. Character Name *</label>
+                <input id="admName" type="text" required placeholder="e.g. Arlecchino" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm bg-white" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">2. Upload Portrait Photo *</label>
+                <label class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-2xl p-3 cursor-pointer transition text-center">
+                  <img id="admPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=genshin" class="w-20 h-20 rounded-xl object-cover object-top border border-slate-200 mb-2" />
+                  <span class="text-xs font-extrabold text-blue-600">📁 Choose File (Auto-uploads to Cloudinary)</span>
+                  <input id="admFileInput" type="file" accept="image/*" onchange="handleAdminImageUpload(event)" class="hidden" />
+                </label>
+                <input id="admImgUrl" type="url" placeholder="Or paste direct image URL..." oninput="document.getElementById('admPreviewImg').src=this.value" class="mt-2 w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white" />
+              </div>
+            </div>
+
+            <!-- Right: Visual Button Pickers & Dropdowns -->
+            <div class="md:col-span-8 space-y-3">
+              <!-- Rarity & Version -->
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Rarity</label>
+                  <div class="grid grid-cols-2 gap-2" id="admRarityPicker">
+                    <button type="button" data-val="5" onclick="setAdmVisual('rarity','5')" class="adm-vis-btn py-2 rounded-xl border-2 border-amber-500 bg-amber-50 text-amber-800 font-extrabold text-xs">5★ Gold</button>
+                    <button type="button" data-val="4" onclick="setAdmVisual('rarity','4')" class="adm-vis-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">4★ Purple</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Release Version</label>
+                  <select id="admVersion" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-sm outline-none"></select>
+                </div>
+              </div>
+
+              <!-- Vision Visual Picker -->
+              <div>
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Vision (Element)</label>
+                <div id="admVisionPicker" class="grid grid-cols-7 gap-1.5"></div>
+              </div>
+
+              <!-- Weapon & Region Visual Pickers -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Weapon</label>
+                  <div id="admWeaponPicker" class="grid grid-cols-5 gap-1.5"></div>
+                </div>
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Region</label>
+                  <div id="admRegionPicker" class="grid grid-cols-4 gap-1.5"></div>
+                </div>
+              </div>
+
+              <!-- Material, Weekly Boss, Ascension Stat Dropdowns with Live Icon Previews -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Local Specialty</label>
+                  <div class="flex items-center gap-1.5">
+                    <span id="admMatPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0"></span>
+                    <select id="admMaterial" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Weekly Boss Drop</label>
+                  <div class="flex items-center gap-1.5">
+                    <span id="admBossPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0"></span>
+                    <select id="admBoss" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Ascension Stat</label>
+                  <select id="admStat" class="w-full px-2.5 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex justify-end">
+            <button id="admSaveBtn" type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl shadow transition text-sm">
+              🚀 Publish Character Live
+            </button>
+          </div>
+        </form>
+
+        <!-- Current Live Roster -->
+        <div>
+          <h3 class="font-extrabold text-sm uppercase text-slate-500 mb-2.5">Live Roster (<span id="admRosterTotal">0</span> Characters)</h3>
+          <div id="adminRosterList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================================
+   1. CLOUD CONFIGURATION (PASTE YOUR FIREBASE CONFIG & CLOUDINARY PRESET)
+   ============================================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  databaseURL: "", // e.g. "https://your-project-default-rtdb.firebaseio.com"
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+const CLOUDINARY_CLOUD_NAME = "hsgk6eyt";
+const CLOUDINARY_UPLOAD_PRESET = "genshin_portraits"; // Create this Unsigned preset in Cloudinary
+const ADMIN_PASSCODE = "mehul2026"; // Change this to your secret admin password!
+
+let db = null;
+let isCloudConnected = false;
+
+if (FIREBASE_CONFIG.databaseURL) {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    isCloudConnected = true;
+    document.getElementById('cloudStatusDot').className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+    document.getElementById('cloudStatusText').textContent = "Live Cloud Sync";
+  } catch (e) {
+    console.warn("Firebase init skipped, running local fallback:", e);
+  }
+}
+
+/* ============================================================================
+   2. SVG EMBLEMS & TAXONOMIES (Visions, Weapons, Regions, Materials, Bosses)
+   ============================================================================ */
+const VISIONS = ["Pyro", "Hydro", "Anemo", "Electro", "Dendro", "Cryo", "Geo"];
+const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
+const REGIONS = ["Mondstadt", "Liyue", "Inazuma", "Sumeru", "Fontaine", "Natlan", "Snezhnaya"];
+const MATERIALS = [
+  "Cecilia", "Windwheel Aster", "Valberry", "Cor Lapis", "Glaze Lily",
+  "Qingxin", "Silk Flower", "Sakura Bloom", "Naku Weed", "Onikabuto",
+  "Kalpalata Lotus", "Scarab", "Padisarah", "Lumidouce Bell", "Lakelight Lily",
+  "Subdetection Unit", "Saurian Claw Succulent", "Sprayfeather Gill"
+];
+const BOSSES = [
+  "Dvalin's Sigh", "Boreas's Ring", "Shadow of the Warrior", "Bloodjade Branch",
+  "Ashen Heart", "Mudra of the Malefic General", "Puppet Strings", "Worldspan Fern",
+  "Everamber", "Lightless Eye", "Silken Feather", "Eroded Horn"
+];
+const STATS = [
+  "CRIT Rate%", "CRIT DMG%", "ATK%", "HP%", "DEF%",
+  "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
+  "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
+];
+const VERSIONS = [
+  "1.0","1.1","1.2","1.3","1.4","1.5","1.6",
+  "2.0","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8",
+  "3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.7","3.8",
+  "4.0","4.1","4.2","4.3","4.4","4.5","4.6","4.7","4.8",
+  "5.0","5.1","5.2","5.3","5.4","5.5","5.6"
+];
+
+function getIconSvg(type, val, size = 28) {
+  const visionColors = {
+    Pyro: "#ef4444", Hydro: "#3b82f6", Anemo: "#14b8a6",
+    Electro: "#a855f7", Dendro: "#22c55e", Cryo: "#38bdf8", Geo: "#eab308"
+  };
+  if (type === "vision") {
+    const c = visionColors[val] || "#64748b";
+    const paths = {
+      Pyro: `<path d="M12 2c2 4-1 6 1 9 1.5 2 4 1 4-2 2 2.5 2.5 6.5 0 9.5-2.5 3-7.5 3-10 0C4.5 15.5 6 10 12 2z" fill="${c}"/>`,
+      Hydro: `<path d="M12 2.5C12 2.5 6 9.5 6 14a6 6 0 0012 0c0-4.5-6-11.5-6-11.5zm-2 12a2.5 2.5 0 012-2.5" fill="${c}"/>`,
+      Anemo: `<path d="M4 10h11a3 3 0 10-3-3M3 14h14a3 3 0 11-3 3M6 18h7" stroke="${c}" stroke-width="2.4" stroke-linecap="round" fill="none"/>`,
+      Electro: `<path d="M13 2L5 13h6l-1 9 9-12h-6l0-8z" fill="${c}"/>`,
+      Dendro: `<path d="M12 3c5 2 8 6 7 11-1 4-5 7-7 7s-6-3-7-7C4 9 7 5 12 3zm0 4v11" stroke="${c}" stroke-width="2" fill="${c}" fill-opacity="0.25"/>`,
+      Cryo: `<path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`,
+      Geo: `<polygon points="12,2 21,12 12,22 3,12" fill="${c}"/><polygon points="12,7 16,12 12,17 8,12" fill="#fff" fill-opacity="0.45"/>`
+    };
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${paths[val] || ''}</svg>`;
+  }
+
+  if (type === "weapon") {
+    const wPaths = {
+      Sword: `<path d="M19 3l2 2-11 11-3 1 1-3L19 3zM5 15l4 4M4 20l2-2" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>`,
+      Claymore: `<path d="M18 2l4 4-11 11-4-4L18 2zM6 14l4 4M3 21l4-4" stroke="#1e293b" stroke-width="2.5" fill="#94a3b8"/>`,
+      Polearm: `<path d="M4 20L19 5M15 4h5v5" stroke="#334155" stroke-width="2.3" stroke-linecap="round" fill="none"/>`,
+      Bow: `<path d="M5 4c8 1 14 7 15 15M5 4l15 15M14 6l4-2-2 4" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>`,
+      Catalyst: `<rect x="5" y="4" width="14" height="16" rx="2" stroke="#334155" stroke-width="2.2" fill="#e2e8f0"/><circle cx="12" cy="12" r="3" fill="#3b82f6"/>`
+    };
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${wPaths[val] || ''}</svg>`;
+  }
+
+  if (type === "region") {
+    const regColors = {
+      Mondstadt: "#0d9488", Liyue: "#d97706", Inazuma: "#7e22ce",
+      Sumeru: "#15803d", Fontaine: "#1d4ed8", Natlan: "#dc2626", Snezhnaya: "#0284c7"
+    };
+    const c = regColors[val] || "#475569";
+    const rPaths = {
+      Mondstadt: `<circle cx="12" cy="12" r="8" stroke="${c}" stroke-width="2.2" fill="none"/><path d="M8 14l4-7 4 7-4-2-4 2z" fill="${c}"/>`,
+      Liyue: `<rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" stroke="${c}" stroke-width="2.2" fill="none"/><circle cx="12" cy="12" r="2.5" fill="${c}"/>`,
+      Inazuma: `<circle cx="12" cy="12" r="7" stroke="${c}" stroke-width="2.2" fill="none"/><circle cx="12" cy="8" r="2" fill="${c}"/><circle cx="8.5" cy="14" r="2" fill="${c}"/><circle cx="15.5" cy="14" r="2" fill="${c}"/>`,
+      Sumeru: `<path d="M12 3c4 4 6 8 0 18C6 11 8 7 12 3z" fill="${c}"/><circle cx="12" cy="11" r="2" fill="#fff"/>`,
+      Fontaine: `<path d="M12 3v18M7 9c2-2 8-2 10 0M6 15c3 3 9 3 12 0" stroke="${c}" stroke-width="2.2" stroke-linecap="round" fill="none"/>`,
+      Natlan: `<path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1 3-6z" fill="${c}"/>`,
+      Snezhnaya: `<path d="M12 2v20M4 7l16 10M20 7L4 17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`
+    };
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${rPaths[val] || ''}</svg>`;
+  }
+
+  // Deterministic Emblem Generator for Local Specialties & Weekly Boss Drops
+  let hash = 0;
+  for (let i = 0; i < val.length; i++) hash = val.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  if (type === "material") {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">
+      <circle cx="12" cy="12" r="9.5" fill="hsl(${hue}, 75%, 90%)" stroke="hsl(${hue}, 70%, 42%)" stroke-width="2"/>
+      <path d="M12 5c2.5 3 5 5.5 0 14C7 10.5 9.5 8 12 5z" fill="hsl(${hue}, 75%, 45%)"/>
+      <circle cx="12" cy="12" r="2.2" fill="#fff"/>
+    </svg>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">
+    <polygon points="12,2 21,7 21,17 12,22 3,17 3,7" fill="hsl(${hue}, 65%, 24%)" stroke="hsl(${hue}, 80%, 60%)" stroke-width="2"/>
+    <circle cx="12" cy="12" r="4" fill="hsl(${hue}, 85%, 65%)"/>
+  </svg>`;
+}
+
+/* ============================================================================
+   3. DEFAULT ROSTER (SEEDED TO CLOUD OR LOCALSTORAGE)
+   ============================================================================ */
+const DEFAULT_CHARACTERS = [
+  { id: "zhongli", name: "Zhongli", rarity: "5", region: "Liyue", vision: "Geo", weapon: "Polearm", version: "1.1", material: "Cor Lapis", boss: "Tusk of Monoceros Caeli", stat: "Geo DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Zhongli.png" },
+  { id: "hutao", name: "Hu Tao", rarity: "5", region: "Liyue", vision: "Pyro", weapon: "Polearm", version: "1.3", material: "Silk Flower", boss: "Shard of a Foul Legacy", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Hutao.png" },
+  { id: "raiden", name: "Raiden Shogun", rarity: "5", region: "Inazuma", vision: "Electro", weapon: "Polearm", version: "2.1", material: "Tenkumo Fruit", boss: "Molten Moment", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Shougun.png" },
+  { id: "furina", name: "Furina", rarity: "5", region: "Fontaine", vision: "Hydro", weapon: "Sword", version: "4.2", material: "Lakelight Lily", boss: "Lightless Mass", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Furina.png" },
+  { id: "nahida", name: "Nahida", rarity: "5", region: "Sumeru", vision: "Dendro", weapon: "Catalyst", version: "3.2", material: "Kalpalata Lotus", boss: "Puppet Strings", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Nahida.png" },
+  { id: "kazuha", name: "Kaedehara Kazuha", rarity: "5", region: "Inazuma", vision: "Anemo", weapon: "Sword", version: "1.6", material: "Sea Ganoderma", boss: "Gilded Scale", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Kazuha.png" },
+  { id: "neuvillette", name: "Neuvillette", rarity: "5", region: "Fontaine", vision: "Hydro", weapon: "Catalyst", version: "4.1", material: "Lumitoile", boss: "Everamber", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Neuvillette.png" },
+  { id: "arlecchino", name: "Arlecchino", rarity: "5", region: "Snezhnaya", vision: "Pyro", weapon: "Polearm", version: "4.6", material: "Rainbow Rose", boss: "Fading Candle", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Arlecchino.png" },
+  { id: "ganyu", name: "Ganyu", rarity: "5", region: "Liyue", vision: "Cryo", weapon: "Bow", version: "1.2", material: "Qingxin", boss: "Shadow of the Warrior", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Ganyu.png" },
+  { id: "xiao", name: "Xiao", rarity: "5", region: "Liyue", vision: "Anemo", weapon: "Polearm", version: "1.3", material: "Qingxin", boss: "Shadow of the Warrior", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Xiao.png" },
+  { id: "venti", name: "Venti", rarity: "5", region: "Mondstadt", vision: "Anemo", weapon: "Bow", version: "1.0", material: "Cecilia", boss: "Tail of Boreas", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Venti.png" },
+  { id: "diluc", name: "Diluc", rarity: "5", region: "Mondstadt", vision: "Pyro", weapon: "Claymore", version: "1.0", material: "Small Lamp Grass", boss: "Dvalin's Plume", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Diluc.png" },
+  { id: "ayaka", name: "Kamisato Ayaka", rarity: "5", region: "Inazuma", vision: "Cryo", weapon: "Sword", version: "2.0", material: "Sakura Bloom", boss: "Bloodjade Branch", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Ayaka.png" },
+  { id: "yelan", name: "Yelan", rarity: "5", region: "Liyue", vision: "Hydro", weapon: "Bow", version: "2.7", material: "Starconch", boss: "Gilded Scale", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Yelan.png" },
+  { id: "navia", name: "Navia", rarity: "5", region: "Fontaine", vision: "Geo", weapon: "Claymore", version: "4.3", material: "Spring of the First Dewdrop", boss: "Lightless Silk String", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Navia.png" },
+  { id: "mavuika", name: "Mavuika", rarity: "5", region: "Natlan", vision: "Pyro", weapon: "Claymore", version: "5.3", material: "Withering Purpurbloom", boss: "Eroded Horn", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Mavuika.png" },
+  { id: "bennett", name: "Bennett", rarity: "4", region: "Mondstadt", vision: "Pyro", weapon: "Sword", version: "1.0", material: "Windwheel Aster", boss: "Dvalin's Plume", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Bennett.png" },
+  { id: "xingqiu", name: "Xingqiu", rarity: "4", region: "Liyue", vision: "Hydro", weapon: "Sword", version: "1.0", material: "Silk Flower", boss: "Tail of Boreas", stat: "ATK%", img: "https://enka.network/ui/UI_AvatarIcon_Xingqiu.png" },
+  { id: "xiangling", name: "Xiangling", rarity: "4", region: "Liyue", vision: "Pyro", weapon: "Polearm", version: "1.0", material: "Jueyun Chili", boss: "Dvalin's Claw", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Xiangling.png" },
+  { id: "fischl", name: "Fischl", rarity: "4", region: "Mondstadt", vision: "Electro", weapon: "Bow", version: "1.0", material: "Small Lamp Grass", boss: "Spirit Locket of Boreas", stat: "ATK%", img: "https://enka.network/ui/UI_AvatarIcon_Fischl.png" },
+  { id: "kuki", name: "Kuki Shinobu", rarity: "4", region: "Inazuma", vision: "Electro", weapon: "Sword", version: "2.7", material: "Naku Weed", boss: "Tears of the Calamitous God", stat: "HP%", img: "https://enka.network/ui/UI_AvatarIcon_Shinobu.png" },
+  { id: "sucrose", name: "Sucrose", rarity: "4", region: "Mondstadt", vision: "Anemo", weapon: "Catalyst", version: "1.0", material: "Windwheel Aster", boss: "Spirit Locket of Boreas", stat: "Anemo DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Sucrose.png" },
+  { id: "barbara", name: "Barbara", rarity: "4", region: "Mondstadt", vision: "Hydro", weapon: "Catalyst", version: "1.0", material: "Philanemo Mushroom", boss: "Ring of Boreas", stat: "HP%", img: "https://enka.network/ui/UI_AvatarIcon_Barbara.png" },
+  { id: "noelle", name: "Noelle", rarity: "4", region: "Mondstadt", vision: "Geo", weapon: "Claymore", version: "1.0", material: "Valberry", boss: "Dvalin's Claw", stat: "DEF%", img: "https://enka.network/ui/UI_AvatarIcon_Noelle.png" }
+];
+
+let CHARACTERS = [];
+
+function initCharacterSync() {
+  if (isCloudConnected) {
+    const charRef = db.ref('characters');
+    charRef.on('value', (snap) => {
+      const val = snap.val();
+      if (!val) {
+        // Seed initial roster to Firebase once
+        const seedObj = {};
+        DEFAULT_CHARACTERS.forEach(c => { seedObj[c.id] = c; });
+        charRef.set(seedObj);
+      } else {
+        CHARACTERS = Object.values(val);
+        onRosterUpdated();
+      }
+    });
+  } else {
+    const saved = localStorage.getItem('teyvat_roster_v1');
+    CHARACTERS = saved ? JSON.parse(saved) : [...DEFAULT_CHARACTERS];
+    if (!saved) localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    onRosterUpdated();
+  }
+}
+
+function onRosterUpdated() {
+  document.getElementById('rosterCountText').textContent = `${CHARACTERS.length} Characters`;
+  renderAdminRosterList();
+  if (!document.getElementById('wdGameView').classList.contains('hidden')) {
+    renderWdQuickGrid();
+  }
+}
+
+/* ============================================================================
+   4. NAVIGATION & HELPERS
+   ============================================================================ */
+function navigateTo(view) {
+  ['portalView', 'gwLobbyView', 'gwGameView', 'wdLobbyView', 'wdGameView'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+  document.getElementById(view + 'View').classList.remove('hidden');
+  document.getElementById('homeBtn').classList.toggle('hidden', view === 'portal');
+  if (view !== 'wdGame' && wdTimerInterval) clearInterval(wdTimerInterval);
+}
+
+function genRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function copyRoomCode(elId) {
+  const txt = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(txt);
+  alert(`Room Code ${txt} copied!`);
+}
+
+/* ============================================================================
+   5. GENSHIN GUESS WHO? (REAL-TIME CLOUD + LOCAL FALLBACK)
+   ============================================================================ */
+let gwSelectedPool = 'all';
+let gwState = {
+  roomCode: '',
+  role: 'p1', // 'p1' or 'p2'
+  playerName: 'Traveler',
+  pool: 'all',
+  boardChars: [],
+  eliminatedIds: new Set(),
+  mySecretId: null,
+  finalGuessMode: false,
+  pendingGuessChar: null,
+  roomRef: null
+};
+
+function selectGwPool(pool) {
+  gwSelectedPool = pool;
+  document.querySelectorAll('.gw-pool-btn').forEach(btn => {
+    const active = btn.dataset.pool === pool;
+    btn.className = active
+      ? "gw-pool-btn py-2.5 px-2 rounded-xl border-2 border-blue-600 bg-blue-50 text-blue-700 font-extrabold text-xs"
+      : "gw-pool-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs";
+  });
+}
+
+function getPoolCharacters(pool) {
+  if (pool === '4') return CHARACTERS.filter(c => String(c.rarity) === '4');
+  if (pool === '5') return CHARACTERS.filter(c => String(c.rarity) === '5');
+  return [...CHARACTERS];
+}
+
+function createGwRoom() {
+  const name = document.getElementById('gwCreateName').value.trim() || 'Traveler';
+  const code = genRoomCode();
+  const poolChars = getPoolCharacters(gwSelectedPool);
+  if (poolChars.length < 4) return alert("Not enough characters in this pool!");
+
+  gwState = {
+    roomCode: code,
+    role: 'p1',
+    playerName: name,
+    pool: gwSelectedPool,
+    boardChars: poolChars,
+    eliminatedIds: new Set(),
+    mySecretId: null,
+    finalGuessMode: false,
+    pendingGuessChar: null
+  };
+
+  const initialRoom = {
+    code,
+    pool: gwSelectedPool,
+    status: 'playing',
+    winner: null,
+    p1: { name, secretId: null, remaining: poolChars.length },
+    p2: { name: 'Waiting...', secretId: null, remaining: poolChars.length },
+    messages: [{ sender: 'System', text: `Room ${code} created (${gwSelectedPool === 'all' ? 'All Characters' : gwSelectedPool + '★ Only'}). Share the code!` }]
+  };
+
+  startGwSession(initialRoom, true);
+}
+
+function joinGwRoom() {
+  const name = document.getElementById('gwJoinName').value.trim() || 'Paimon';
+  const code = document.getElementById('gwJoinCode').value.trim().toUpperCase();
+  if (code.length < 4) return alert("Enter a valid room code!");
+
+  if (isCloudConnected) {
+    db.ref(`gw_rooms/${code}`).once('value', (snap) => {
+      const room = snap.val();
+      if (!room) return alert("Room not found! Check the code.");
+      const poolChars = getPoolCharacters(room.pool);
+      gwState = {
+        roomCode: code,
+        role: 'p2',
+        playerName: name,
+        pool: room.pool,
+        boardChars: poolChars,
+        eliminatedIds: new Set(),
+        mySecretId: null,
+        finalGuessMode: false,
+        pendingGuessChar: null
+      };
+      db.ref(`gw_rooms/${code}/p2`).update({ name, remaining: poolChars.length });
+      pushGwMessage(code, 'System', `${name} joined the room!`);
+      startGwSession(room, false);
+    });
+  } else {
+    alert("Cloud sync isn't configured yet—creating a local test session with your code!");
+    document.getElementById('gwCreateName').value = name;
+    createGwRoom();
+  }
+}
+
+function startGwSession(roomData, isCreator) {
+  navigateTo('gwGame');
+  document.getElementById('gwRoomCodeDisplay').textContent = gwState.roomCode;
+  document.getElementById('gwPoolBadge').textContent = `Pool: ${gwState.pool === 'all' ? 'All' : gwState.pool + '★ Only'}`;
+  document.getElementById('gwMySecretPreview').innerHTML = `<span class="text-2xl">❓</span>`;
+  document.getElementById('gwMySecretName').textContent = "Not Selected";
+  document.getElementById('gwSelectBanner').classList.remove('hidden');
+
+  renderGwBoard();
+
+  if (isCloudConnected) {
+    const ref = db.ref(`gw_rooms/${gwState.roomCode}`);
+    if (isCreator) ref.set(roomData);
+    ref.on('value', (snap) => {
+      const data = snap.val();
+      if (!data) return;
+      syncGwRoomUI(data);
+    });
+  } else {
+    // Local fallback simulation
+    const botChar = gwState.boardChars[Math.floor(Math.random() * gwState.boardChars.length)];
+    roomData.p2 = { name: 'Paimon (Sim)', secretId: botChar.id, remaining: gwState.boardChars.length };
+    window._localGwRoom = roomData;
+    syncGwRoomUI(roomData);
+  }
+}
+
+function syncGwRoomUI(data) {
+  const oppKey = gwState.role === 'p1' ? 'p2' : 'p1';
+  const myKey = gwState.role;
+  const opp = data[oppKey] || { name: 'Waiting...', remaining: gwState.boardChars.length };
+  const me = data[myKey] || { remaining: gwState.boardChars.length };
+
+  document.getElementById('gwOppNameBadge').textContent = `Vs: ${opp.name}`;
+  document.getElementById('gwMyCount').textContent = me.remaining;
+  document.getElementById('gwOppCount').textContent = opp.remaining;
+
+  // Render Chat
+  const chatBox = document.getElementById('gwChatMessages');
+  const msgs = data.messages ? Object.values(data.messages) : [];
+  chatBox.innerHTML = msgs.map(m => {
+    if (m.sender === 'System') {
+      return `<div class="text-center text-[11px] font-extrabold text-slate-400 bg-slate-100 py-1 px-2.5 rounded-lg">${m.text}</div>`;
+    }
+    const isMe = m.sender === gwState.playerName;
+    return `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+      <span class="text-[10px] font-extrabold text-slate-400 px-1">${m.sender}</span>
+      <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'} px-3 py-1.5 rounded-2xl font-bold text-xs max-w-[85%] shadow-sm">${m.text}</div>
+    </div>`;
+  }).join('');
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // Check Winner
+  if (data.winner) {
+    const didIWin = data.winner.role === gwState.role;
+    const myChar = CHARACTERS.find(c => c.id === data[myKey]?.secretId) || gwState.boardChars[0];
+    const oppChar = CHARACTERS.find(c => c.id === data[oppKey]?.secretId) || gwState.boardChars[0];
+
+    document.getElementById('goEmoji').textContent = didIWin ? '🏆' : '💀';
+    document.getElementById('goTitle').textContent = didIWin ? 'Victory!' : 'Defeat!';
+    document.getElementById('goSubtitle').textContent = data.winner.reason;
+    document.getElementById('goMyImg').src = myChar?.img || '';
+    document.getElementById('goMyName').textContent = myChar?.name || 'Unknown';
+    document.getElementById('goOppImg').src = oppChar?.img || '';
+    document.getElementById('goOppName').textContent = oppChar?.name || 'Unknown';
+    document.getElementById('gameOverModal').classList.remove('hidden');
+  }
+}
+
+function renderGwBoard() {
+  const grid = document.getElementById('gwBoardGrid');
+  grid.innerHTML = gwState.boardChars.map(c => {
+    const isElim = gwState.eliminatedIds.has(c.id);
+    const isSecret = gwState.mySecretId === c.id;
+    return `<div onclick="handleGwTileClick('${c.id}')" class="gw-tile ${isElim ? 'eliminated' : ''} ${isSecret ? 'secret-picked' : ''} ${gwState.finalGuessMode ? 'guess-mode' : ''}">
+      <img src="${c.img}" alt="" loading="lazy" />
+    </div>`;
+  }).join('');
+}
+
+function handleGwTileClick(charId) {
+  const char = gwState.boardChars.find(c => c.id === charId);
+  if (!char) return;
+
+  // Step 1: Pick Secret Character
+  if (!gwState.mySecretId) {
+    gwState.mySecretId = charId;
+    document.getElementById('gwMySecretPreview').innerHTML = `<img src="${char.img}" class="w-full h-full object-cover object-top" />`;
+    document.getElementById('gwMySecretName').textContent = char.name;
+    document.getElementById('gwPhaseHint').textContent = "Click tiles to eliminate suspects!";
+    document.getElementById('gwSelectBanner').classList.add('hidden');
+    renderGwBoard();
+
+    if (isCloudConnected) {
+      db.ref(`gw_rooms/${gwState.roomCode}/${gwState.role}`).update({ secretId: charId });
+      pushGwMessage(gwState.roomCode, 'System', `${gwState.playerName} locked in their secret character!`);
+    } else {
+      window._localGwRoom[gwState.role].secretId = charId;
+      pushGwMessage(gwState.roomCode, 'System', `${gwState.playerName} locked in their secret character!`);
+    }
+    return;
+  }
+
+  // Step 2: Final Guess Mode
+  if (gwState.finalGuessMode) {
+    if (gwState.eliminatedIds.has(charId)) return;
+    gwState.pendingGuessChar = char;
+    document.getElementById('fgModalImg').src = char.img;
+    document.getElementById('fgModalName').textContent = char.name;
+    document.getElementById('finalGuessModal').classList.remove('hidden');
+    return;
+  }
+
+  // Step 3: Toggle Elimination
+  if (gwState.eliminatedIds.has(charId)) {
+    gwState.eliminatedIds.delete(charId);
+  } else {
+    gwState.eliminatedIds.add(charId);
+  }
+  const rem = gwState.boardChars.length - gwState.eliminatedIds.size;
+  renderGwBoard();
+
+  if (isCloudConnected) {
+    db.ref(`gw_rooms/${gwState.roomCode}/${gwState.role}`).update({ remaining: rem });
+  } else {
+    window._localGwRoom[gwState.role].remaining = rem;
+    syncGwRoomUI(window._localGwRoom);
+  }
+}
+
+function toggleGwFinalGuess() {
+  if (!gwState.mySecretId) return alert("Pick your secret character first!");
+  gwState.finalGuessMode = !gwState.finalGuessMode;
+  const btn = document.getElementById('gwFinalGuessBtn');
+  btn.textContent = gwState.finalGuessMode ? "❌ Cancel Guess Mode" : "🎯 Make Final Guess";
+  btn.className = gwState.finalGuessMode
+    ? "bg-slate-800 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition animate-pulse"
+    : "bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition";
+  renderGwBoard();
+}
+
+function closeFinalGuessModal() {
+  document.getElementById('finalGuessModal').classList.add('hidden');
+  gwState.pendingGuessChar = null;
+}
+
+function confirmFinalGuess() {
+  const guessed = gwState.pendingGuessChar;
+  closeFinalGuessModal();
+  if (!guessed) return;
+
+  const oppKey = gwState.role === 'p1' ? 'p2' : 'p1';
+  if (isCloudConnected) {
+    db.ref(`gw_rooms/${gwState.roomCode}/${oppKey}`).once('value', (snap) => {
+      const opp = snap.val();
+      if (!opp || !opp.secretId) return alert("Opponent hasn't picked their character yet!");
+      const isCorrect = opp.secretId === guessed.id;
+      const winRole = isCorrect ? gwState.role : oppKey;
+      const reason = isCorrect
+        ? `${gwState.playerName} correctly guessed ${guessed.name}!`
+        : `${gwState.playerName} guessed ${guessed.name} — WRONG!`;
+      db.ref(`gw_rooms/${gwState.roomCode}/winner`).set({ role: winRole, reason });
+    });
+  } else {
+    const oppSecret = window._localGwRoom[oppKey].secretId;
+    const isCorrect = oppSecret === guessed.id;
+    window._localGwRoom.winner = {
+      role: isCorrect ? gwState.role : oppKey,
+      reason: isCorrect ? `${gwState.playerName} correctly guessed ${guessed.name}!` : `${gwState.playerName} guessed ${guessed.name} — WRONG!`
+    };
+    syncGwRoomUI(window._localGwRoom);
+  }
+}
+
+function sendGwChat(e) {
+  e.preventDefault();
+  const inp = document.getElementById('gwChatInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+  pushGwMessage(gwState.roomCode, gwState.playerName, txt);
+}
+
+function sendGwQuickReply(txt) {
+  pushGwMessage(gwState.roomCode, gwState.playerName, txt);
+}
+
+function pushGwMessage(code, sender, text) {
+  if (isCloudConnected) {
+    db.ref(`gw_rooms/${code}/messages`).push({ sender, text });
+  } else if (window._localGwRoom) {
+    window._localGwRoom.messages.push({ sender, text });
+    syncGwRoomUI(window._localGwRoom);
+  }
+}
+
+function closeGameOverModal() {
+  document.getElementById('gameOverModal').classList.add('hidden');
+  if (isCloudConnected && gwState.roomCode) db.ref(`gw_rooms/${gwState.roomCode}`).off();
+  navigateTo('portal');
+}
+
+/* ============================================================================
+   6. GENSHINDLE (SINGLE PLAYER ENDLESS + MULTIPLAYER RACE)
+   ============================================================================ */
+let wdState = {
+  mode: 'solo', // 'solo' or 'multi'
+  roomCode: '',
+  role: 'p1',
+  playerName: 'Traveler',
+  targetChar: null,
+  dynamicType: 'material', // 'material', 'boss', 'stat'
+  guesses: [],
+  roundOver: false,
+  startTime: 0
+};
+let wdTimerInterval = null;
+
+function getSessionHighscore() {
+  return Number(sessionStorage.getItem('genshindle_session_best') || 0);
+}
+function setSessionHighscore(val) {
+  sessionStorage.setItem('genshindle_session_best', String(val));
+}
+
+function startGenshindleSolo() {
+  wdState.mode = 'solo';
+  wdState.streak = 0;
+  navigateTo('wdGame');
+  document.getElementById('wdModeBadge').textContent = "Endless Single Player";
+  document.getElementById('wdSoloStats').classList.remove('hidden');
+  document.getElementById('wdMultiStats').classList.add('hidden');
+  document.getElementById('wdChatCard').classList.add('hidden');
+  document.getElementById('wdOppWonBanner').classList.add('hidden');
+  document.getElementById('wdHighscoreVal').textContent = getSessionHighscore();
+  document.getElementById('wdStreakVal').textContent = "0";
+  initWdRound();
+}
+
+function createWdRoom() {
+  const name = document.getElementById('wdCreateName').value.trim() || 'Traveler';
+  const code = genRoomCode();
+  const target = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+  const types = ['material', 'boss', 'stat'];
+  const dyn = types[Math.floor(Math.random() * types.length)];
+
+  wdState = {
+    mode: 'multi',
+    roomCode: code,
+    role: 'p1',
+    playerName: name,
+    targetChar: target,
+    dynamicType: dyn,
+    guesses: [],
+    roundOver: false,
+    startTime: Date.now()
+  };
+
+  const roomObj = {
+    code,
+    round: 1,
+    targetId: target.id,
+    dynamicType: dyn,
+    startTime: wdState.startTime,
+    firstWinner: null,
+    p1: { name, tries: 0, greens: 0, yellows: 0 },
+    p2: { name: 'Waiting...', tries: 0, greens: 0, yellows: 0 },
+    messages: [{ sender: 'System', text: `Race Room ${code} started! Solve the character first!` }]
+  };
+
+  startWdMultiSession(roomObj, true);
+}
+
+function joinWdRoom() {
+  const name = document.getElementById('wdJoinName').value.trim() || 'Klee';
+  const code = document.getElementById('wdJoinCode').value.trim().toUpperCase();
+  if (code.length < 4) return alert("Enter a valid room code!");
+
+  if (isCloudConnected) {
+    db.ref(`wd_rooms/${code}`).once('value', (snap) => {
+      const room = snap.val();
+      if (!room) return alert("Race room not found!");
+      const target = CHARACTERS.find(c => c.id === room.targetId) || CHARACTERS[0];
+      wdState = {
+        mode: 'multi',
+        roomCode: code,
+        role: 'p2',
+        playerName: name,
+        targetChar: target,
+        dynamicType: room.dynamicType,
+        guesses: [],
+        roundOver: false,
+        startTime: room.startTime || Date.now()
+      };
+      db.ref(`wd_rooms/${code}/p2`).update({ name, tries: 0, greens: 0, yellows: 0 });
+      pushWdMessage(code, 'System', `${name} joined the race!`);
+      startWdMultiSession(room, false);
+    });
+  } else {
+    alert("Cloud sync not configured — starting local race session!");
+    document.getElementById('wdCreateName').value = name;
+    createWdRoom();
+  }
+}
+
+function startWdMultiSession(roomObj, isCreator) {
+  navigateTo('wdGame');
+  document.getElementById('wdModeBadge').textContent = "2-Player Multiplayer Race";
+  document.getElementById('wdSoloStats').classList.add('hidden');
+  document.getElementById('wdMultiStats').classList.remove('hidden');
+  document.getElementById('wdChatCard').classList.remove('hidden');
+  document.getElementById('wdRoomCodeDisplay').textContent = wdState.roomCode;
+
+  setupWdBoardUI();
+  startWdTimer();
+
+  if (isCloudConnected) {
+    const ref = db.ref(`wd_rooms/${wdState.roomCode}`);
+    if (isCreator) ref.set(roomObj);
+    ref.on('value', (snap) => {
+      const data = snap.val();
+      if (!data) return;
+      // Handle Next Round sync
+      if (data.targetId && wdState.targetChar && data.targetId !== wdState.targetChar.id) {
+        wdState.targetChar = CHARACTERS.find(c => c.id === data.targetId) || CHARACTERS[0];
+        wdState.dynamicType = data.dynamicType;
+        wdState.guesses = [];
+        wdState.roundOver = false;
+        wdState.startTime = data.startTime || Date.now();
+        setupWdBoardUI();
+      }
+      syncWdMultiUI(data);
+    });
+  } else {
+    window._localWdRoom = roomObj;
+    syncWdMultiUI(roomObj);
+  }
+}
+
+function syncWdMultiUI(data) {
+  const oppKey = wdState.role === 'p1' ? 'p2' : 'p1';
+  const opp = data[oppKey] || { name: 'Opponent', tries: 0, greens: 0, yellows: 0 };
+  document.getElementById('wdOppNameLabel').textContent = opp.name;
+  document.getElementById('wdOppTries').textContent = `${opp.tries}/5`;
+  document.getElementById('wdOppGreens').textContent = opp.greens;
+  document.getElementById('wdOppYellows').textContent = opp.yellows;
+
+  // Opponent won banner (non-blocking!)
+  if (data.firstWinner && data.firstWinner.role !== wdState.role && !wdState.roundOver) {
+    document.getElementById('wdOppWonBanner').classList.remove('hidden');
+    document.getElementById('wdOppWonText').textContent = `${data.firstWinner.name} solved it in ${data.firstWinner.tries} tries!`;
+  } else {
+    document.getElementById('wdOppWonBanner').classList.add('hidden');
+  }
+
+  // Chat
+  const chatBox = document.getElementById('wdChatMessages');
+  const msgs = data.messages ? Object.values(data.messages) : [];
+  chatBox.innerHTML = msgs.map(m => {
+    if (m.sender === 'System') {
+      return `<div class="text-center text-[11px] font-extrabold text-slate-400 bg-slate-100 py-1 px-2 rounded-lg">${m.text}</div>`;
+    }
+    const isMe = m.sender === wdState.playerName;
+    return `<div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+      <span class="text-[10px] font-extrabold text-slate-400 px-1">${m.sender}</span>
+      <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-800'} px-3 py-1.5 rounded-2xl font-bold text-xs max-w-[85%]">${m.text}</div>
+    </div>`;
+  }).join('');
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function initWdRound() {
+  const target = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+  const types = ['material', 'boss', 'stat'];
+  wdState.targetChar = target;
+  wdState.dynamicType = types[Math.floor(Math.random() * types.length)];
+  wdState.guesses = [];
+  wdState.roundOver = false;
+  setupWdBoardUI();
+}
+
+function setupWdBoardUI() {
+  const headers = { material: "Local Specialty", boss: "Weekly Boss", stat: "Ascension Stat" };
+  document.getElementById('wdDynamicColHeader').textContent = headers[wdState.dynamicType];
+  document.getElementById('wdTriesCount').textContent = "0";
+  document.getElementById('wdSearchInput').value = "";
+  document.getElementById('wdRoundOverBar').classList.add('hidden');
+  document.getElementById('wdOppWonBanner').classList.add('hidden');
+  document.getElementById('wdGuessRows').innerHTML = `<div class="text-center py-8 text-slate-400 font-bold text-sm">Select any character above to make your first guess!</div>`;
+  renderWdQuickGrid();
+}
+
+function startWdTimer() {
+  if (wdTimerInterval) clearInterval(wdTimerInterval);
+  wdTimerInterval = setInterval(() => {
+    const sec = Math.floor((Date.now() - wdState.startTime) / 1000);
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    document.getElementById('wdTimerDisplay').textContent = `${m}:${s}`;
+  }, 500);
+}
+
+function renderWdQuickGrid() {
+  const query = document.getElementById('wdSearchInput').value.trim().toLowerCase();
+  const guessedIds = new Set(wdState.guesses.map(g => g.id));
+  const filtered = CHARACTERS.filter(c => c.name.toLowerCase().includes(query));
+
+  document.getElementById('wdQuickPickGrid').innerHTML = filtered.map(c => {
+    const used = guessedIds.has(c.id);
+    return `<button type="button" ${used || wdState.roundOver ? 'disabled' : ''} onclick="submitWdGuess('${c.id}')" title="${c.name}"
+      class="relative aspect-square rounded-xl overflow-hidden border-2 ${used ? 'border-slate-300 opacity-35 grayscale cursor-not-allowed' : 'border-white hover:border-blue-500 hover:scale-105 shadow-sm'} transition bg-slate-200">
+      <img src="${c.img}" alt="${c.name}" class="w-full h-full object-cover object-top" />
+    </button>`;
+  }).join('');
+}
+
+function filterWdGrid() {
+  renderWdQuickGrid();
+}
+
+function submitWdGuess(charId) {
+  if (wdState.roundOver || wdState.guesses.length >= 5) return;
+  const guess = CHARACTERS.find(c => c.id === charId);
+  const target = wdState.targetChar;
+  if (!guess || !target) return;
+
+  if (wdState.guesses.length === 0) {
+    document.getElementById('wdGuessRows').innerHTML = '';
+  }
+
+  wdState.guesses.push(guess);
+  document.getElementById('wdTriesCount').textContent = wdState.guesses.length;
+
+  // Evaluate Columns
+  const nameMatch = guess.id === target.id;
+  const dynMatch = guess[wdState.dynamicType] === target[wdState.dynamicType];
+  const regMatch = guess.region === target.region;
+  const visMatch = guess.vision === target.vision;
+  const wepMatch = guess.weapon === target.weapon;
+
+  const gVer = parseFloat(guess.version);
+  const tVer = parseFloat(target.version);
+  const verDiff = +(tVer - gVer).toFixed(1);
+  let verStatus = 'red';
+  let verArrow = verDiff > 0 ? '↑' : (verDiff < 0 ? '↓' : '=');
+  if (verDiff === 0) verStatus = 'green';
+  else if (Math.abs(verDiff) <= 0.3) verStatus = 'yellow';
+
+  // Count Greens & Yellows for Multiplayer Progress
+  const greens = [nameMatch, dynMatch, regMatch, visMatch, wepMatch, verStatus === 'green'].filter(Boolean).length;
+  const yellows = verStatus === 'yellow' ? 1 : 0;
+
+  // Dynamic Cell HTML (Logo for material/boss, text for stat)
+  let dynCellInner = '';
+  if (wdState.dynamicType === 'stat') {
+    dynCellInner = `<span class="text-xs font-extrabold leading-tight px-1">${guess.stat}</span>`;
+  } else {
+    dynCellInner = `<div class="bg-white/90 p-1.5 rounded-xl shadow-sm">${getIconSvg(wdState.dynamicType, guess[wdState.dynamicType], 28)}</div>`;
+  }
+
+  const bgClass = (ok) => ok ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-rose-500 text-white border-rose-600';
+  const verBg = verStatus === 'green' ? 'bg-emerald-500 border-emerald-600' : (verStatus === 'yellow' ? 'bg-amber-400 text-slate-900 border-amber-500' : 'bg-rose-500 border-rose-600');
+
+  const rowHtml = `
+    <div class="grid grid-cols-7 gap-2 items-center text-center wd-cell-anim">
+      <div class="aspect-square rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 mx-auto w-14 h-14">
+        <img src="${guess.img}" class="w-full h-full object-cover object-top" />
+      </div>
+      <div class="h-14 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xs px-1 ${bgClass(nameMatch)}">${guess.name}</div>
+      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
+      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(regMatch)}" title="${guess.region}">
+        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('region', guess.region, 28)}</div>
+      </div>
+      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(visMatch)}" title="${guess.vision}">
+        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('vision', guess.vision, 28)}</div>
+      </div>
+      <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(wepMatch)}" title="${guess.weapon}">
+        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('weapon', guess.weapon, 28)}</div>
+      </div>
+      <div class="h-14 rounded-2xl border-2 flex flex-col items-center justify-center font-extrabold text-white ${verBg}">
+        <span class="text-sm leading-none">${verArrow}</span>
+        <span class="text-xs mt-0.5">${guess.version}</span>
+      </div>
+    </div>
+  `;
+  document.getElementById('wdGuessRows').insertAdjacentHTML('afterbegin', rowHtml);
+
+  // Sync Multiplayer Stats
+  if (wdState.mode === 'multi' && isCloudConnected) {
+    db.ref(`wd_rooms/${wdState.roomCode}/${wdState.role}`).update({
+      tries: wdState.guesses.length,
+      greens,
+      yellows
+    });
+  }
+
+  // Check Win / Loss
+  if (nameMatch) {
+    wdState.roundOver = true;
+    document.getElementById('wdRoundOverBar').classList.remove('hidden');
+    document.getElementById('wdRoundResultMsg').innerHTML = `🎉 Correct! It was <span class="text-emerald-600">${target.name}</span>!`;
+
+    if (wdState.mode === 'solo') {
+      wdState.streak = (wdState.streak || 0) + 1;
+      document.getElementById('wdStreakVal').textContent = wdState.streak;
+      if (wdState.streak > getSessionHighscore()) {
+        setSessionHighscore(wdState.streak);
+        document.getElementById('wdHighscoreVal').textContent = wdState.streak;
+      }
+    } else if (isCloudConnected) {
+      db.ref(`wd_rooms/${wdState.roomCode}/firstWinner`).transaction(curr => {
+        return curr || { role: wdState.role, name: wdState.playerName, tries: wdState.guesses.length };
+      });
+      pushWdMessage(wdState.roomCode, 'System', `🏆 ${wdState.playerName} solved ${target.name} in ${wdState.guesses.length}/5 tries!`);
+    }
+  } else if (wdState.guesses.length >= 5) {
+    wdState.roundOver = true;
+    document.getElementById('wdRoundOverBar').classList.remove('hidden');
+    document.getElementById('wdRoundResultMsg').innerHTML = `❌ Out of tries! The character was <span class="text-rose-600">${target.name}</span>.`;
+    if (wdState.mode === 'solo') {
+      wdState.streak = 0;
+      document.getElementById('wdStreakVal').textContent = "0";
+    }
+  }
+
+  renderWdQuickGrid();
+}
+
+function startNextWdRound() {
+  if (wdState.mode === 'solo') {
+    initWdRound();
+  } else {
+    giveUpAndNextWdRound();
+  }
+}
+
+function giveUpAndNextWdRound() {
+  const nextTarget = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
+  const types = ['material', 'boss', 'stat'];
+  const nextDyn = types[Math.floor(Math.random() * types.length)];
+  const now = Date.now();
+
+  if (wdState.mode === 'multi' && isCloudConnected) {
+    db.ref(`wd_rooms/${wdState.roomCode}`).update({
+      targetId: nextTarget.id,
+      dynamicType: nextDyn,
+      startTime: now,
+      firstWinner: null,
+      'p1/tries': 0, 'p1/greens': 0, 'p1/yellows': 0,
+      'p2/tries': 0, 'p2/greens': 0, 'p2/yellows': 0
+    });
+    pushWdMessage(wdState.roomCode, 'System', `🔄 ${wdState.playerName} started a new round!`);
+  } else {
+    wdState.targetChar = nextTarget;
+    wdState.dynamicType = nextDyn;
+    wdState.guesses = [];
+    wdState.roundOver = false;
+    wdState.startTime = now;
+    setupWdBoardUI();
+  }
+}
+
+function sendWdChat(e) {
+  e.preventDefault();
+  const inp = document.getElementById('wdChatInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+  pushWdMessage(wdState.roomCode, wdState.playerName, txt);
+}
+
+function pushWdMessage(code, sender, text) {
+  if (isCloudConnected) {
+    db.ref(`wd_rooms/${code}/messages`).push({ sender, text });
+  } else if (window._localWdRoom) {
+    window._localWdRoom.messages.push({ sender, text });
+    syncWdMultiUI(window._localWdRoom);
+  }
+}
+
+/* ============================================================================
+   7. ADMIN DASHBOARD (GLOBAL LIVE SYNC + CLOUDINARY UPLOAD)
+   ============================================================================ */
+let adminFormState = { rarity: '5', vision: 'Pyro', weapon: 'Sword', region: 'Mondstadt' };
+
+function openAdminModal() {
+  document.getElementById('adminModal').classList.remove('hidden');
+  populateAdminPickers();
+}
+function closeAdminModal() {
+  document.getElementById('adminModal').classList.add('hidden');
+}
+
+function unlockAdmin() {
+  const val = document.getElementById('adminPassInput').value;
+  if (val === ADMIN_PASSCODE) {
+    document.getElementById('adminLockBox').classList.add('hidden');
+    document.getElementById('adminContentBox').classList.remove('hidden');
+    renderAdminRosterList();
+  } else {
+    alert("Wrong Admin Passcode!");
+  }
+}
+
+function populateAdminPickers() {
+  document.getElementById('admVersion').innerHTML = VERSIONS.map(v => `<option value="${v}">${v}</option>`).join('');
+  document.getElementById('admMaterial').innerHTML = MATERIALS.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('admBoss').innerHTML = BOSSES.map(b => `<option value="${b}">${b}</option>`).join('');
+  document.getElementById('admStat').innerHTML = STATS.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  document.getElementById('admVisionPicker').innerHTML = VISIONS.map(v => `
+    <button type="button" data-group="vision" data-val="${v}" onclick="setAdmVisual('vision','${v}')" title="${v}"
+      class="adm-vis-btn p-1.5 rounded-xl border-2 border-slate-200 bg-white flex items-center justify-center hover:border-blue-400">
+      ${getIconSvg('vision', v, 22)}
+    </button>
+  `).join('');
+
+  document.getElementById('admWeaponPicker').innerHTML = WEAPONS.map(w => `
+    <button type="button" data-group="weapon" data-val="${w}" onclick="setAdmVisual('weapon','${w}')" title="${w}"
+      class="adm-vis-btn p-1.5 rounded-xl border-2 border-slate-200 bg-white flex items-center justify-center hover:border-blue-400">
+      ${getIconSvg('weapon', w, 20)}
+    </button>
+  `).join('');
+
+  document.getElementById('admRegionPicker').innerHTML = REGIONS.map(r => `
+    <button type="button" data-group="region" data-val="${r}" onclick="setAdmVisual('region','${r}')" title="${r}"
+      class="adm-vis-btn p-1.5 rounded-xl border-2 border-slate-200 bg-white flex items-center justify-center hover:border-blue-400">
+      ${getIconSvg('region', r, 20)}
+    </button>
+  `).join('');
+
+  setAdmVisual('rarity', adminFormState.rarity);
+  setAdmVisual('vision', adminFormState.vision);
+  setAdmVisual('weapon', adminFormState.weapon);
+  setAdmVisual('region', adminFormState.region);
+  updateAdminDropdownPreviews();
+}
+
+function setAdmVisual(group, val) {
+  adminFormState[group] = val;
+  const containerId = {
+    rarity: 'admRarityPicker',
+    vision: 'admVisionPicker',
+    weapon: 'admWeaponPicker',
+    region: 'admRegionPicker'
+  }[group];
+  document.querySelectorAll(`#${containerId} .adm-vis-btn`).forEach(btn => {
+    const active = btn.dataset.val === val;
+    btn.classList.toggle('border-blue-600', active);
+    btn.classList.toggle('bg-blue-50', active);
+    btn.classList.toggle('border-slate-200', !active);
+    btn.classList.toggle('bg-white', !active);
+  });
+}
+
+function updateAdminDropdownPreviews() {
+  const mat = document.getElementById('admMaterial').value;
+  const boss = document.getElementById('admBoss').value;
+  document.getElementById('admMatPreview').innerHTML = getIconSvg('material', mat, 22);
+  document.getElementById('admBossPreview').innerHTML = getIconSvg('boss', boss, 22);
+}
+
+async function handleAdminImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Immediate local preview
+  const reader = new FileReader();
+  reader.onload = (ev) => { document.getElementById('admPreviewImg').src = ev.target.result; };
+  reader.readAsDataURL(file);
+
+  // Upload to Cloudinary so everyone sees the live HTTPS image
+  const saveBtn = document.getElementById('admSaveBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = "⏳ Uploading Portrait to Cloudinary...";
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.secure_url) {
+      document.getElementById('admImgUrl').value = data.secure_url;
+      document.getElementById('admPreviewImg').src = data.secure_url;
+    } else {
+      alert("Cloudinary upload note: Make sure unsigned preset '" + CLOUDINARY_UPLOAD_PRESET + "' exists, or paste an image URL directly.");
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "🚀 Publish Character Live";
+  }
+}
+
+function saveAdminCharacter(e) {
+  e.preventDefault();
+  const name = document.getElementById('admName').value.trim();
+  const img = document.getElementById('admImgUrl').value.trim() || document.getElementById('admPreviewImg').src;
+  if (!name || !img) return alert("Please enter a name and upload/paste a portrait!");
+
+  const editId = document.getElementById('adminEditId').value;
+  const id = editId || name.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString().slice(-4);
+
+  const charObj = {
+    id,
+    name,
+    img,
+    rarity: adminFormState.rarity,
+    vision: adminFormState.vision,
+    weapon: adminFormState.weapon,
+    region: adminFormState.region,
+    version: document.getElementById('admVersion').value,
+    material: document.getElementById('admMaterial').value,
+    boss: document.getElementById('admBoss').value,
+    stat: document.getElementById('admStat').value
+  };
+
+  if (isCloudConnected) {
+    db.ref(`characters/${id}`).set(charObj);
+  } else {
+    const idx = CHARACTERS.findIndex(c => c.id === id);
+    if (idx >= 0) CHARACTERS[idx] = charObj;
+    else CHARACTERS.push(charObj);
+    localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    onRosterUpdated();
+  }
+
+  resetAdminForm();
+  alert(`✅ ${name} is now live for all players!`);
+}
+
+function editAdminCharacter(id) {
+  const c = CHARACTERS.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('adminFormTitle').textContent = `✏️ Editing: ${c.name}`;
+  document.getElementById('adminCancelEditBtn').classList.remove('hidden');
+  document.getElementById('adminEditId').value = c.id;
+  document.getElementById('admName').value = c.name;
+  document.getElementById('admImgUrl').value = c.img;
+  document.getElementById('admPreviewImg').src = c.img;
+  document.getElementById('admVersion').value = c.version;
+  document.getElementById('admMaterial').value = c.material;
+  document.getElementById('admBoss').value = c.boss;
+  document.getElementById('admStat').value = c.stat;
+  setAdmVisual('rarity', String(c.rarity));
+  setAdmVisual('vision', c.vision);
+  setAdmVisual('weapon', c.weapon);
+  setAdmVisual('region', c.region);
+  updateAdminDropdownPreviews();
+}
+
+function deleteAdminCharacter(id) {
+  if (!confirm("Remove this character from the live roster?")) return;
+  if (isCloudConnected) {
+    db.ref(`characters/${id}`).remove();
+  } else {
+    CHARACTERS = CHARACTERS.filter(c => c.id !== id);
+    localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    onRosterUpdated();
+  }
+}
+
+function resetAdminForm() {
+  document.getElementById('adminCharForm').reset();
+  document.getElementById('adminEditId').value = '';
+  document.getElementById('adminFormTitle').textContent = "➕ Add New Character (Goes Live Globally)";
+  document.getElementById('adminCancelEditBtn').classList.add('hidden');
+  document.getElementById('admPreviewImg').src = "https://api.dicebear.com/7.x/shapes/svg?seed=genshin";
+  updateAdminDropdownPreviews();
+}
+
+function renderAdminRosterList() {
+  document.getElementById('admRosterTotal').textContent = CHARACTERS.length;
+  document.getElementById('adminRosterList').innerHTML = CHARACTERS.map(c => `
+    <div class="flex items-center justify-between bg-slate-50 border border-slate-200 p-2 rounded-2xl">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <img src="${c.img}" class="w-10 h-10 rounded-xl object-cover object-top shrink-0 border border-slate-200" />
+        <div class="truncate">
+          <div class="font-extrabold text-xs text-slate-800 truncate">${c.name}</div>
+          <div class="text-[10px] font-bold text-slate-500">${c.rarity}★ • ${c.region} • v${c.version}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button type="button" onclick="editAdminCharacter('${c.id}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-extrabold text-[11px]">Edit</button>
+        <button type="button" onclick="deleteAdminCharacter('${c.id}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-extrabold text-[11px]">Del</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Boot
+initCharacterSync();
+</script>
+</body>
+</html>
