@@ -771,6 +771,8 @@ function getDynamicVersions() {
 
 function getIconSvg(type, val, size = 28) {
   // 1. Check if Admin uploaded a custom logo/photo to Cloudinary for this item!
+  const needsShadow = type === 'vision' || type === 'region';
+  const shadowStyle = needsShadow ? 'filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));' : '';
   const customUrl = TAXONOMIES.customIcons[`${type}:${val}`];
   if (customUrl) {
     return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;" class="object-contain rounded-md inline-block" />`;
@@ -793,8 +795,7 @@ function getIconSvg(type, val, size = 28) {
       Geo: `<polygon points="12,2 21,12 12,22 3,12" fill="${c}"/><polygon points="12,7 16,12 12,17 8,12" fill="#fff" fill-opacity="0.45"/>`
     };
     const fallback = `<circle cx="12" cy="12" r="9" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${paths[val] || fallback}</svg>`;
-  }
+return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${shadowStyle}" title="${val}">${paths[val] || fallback}</svg>`;  }
 
  if (type === "weapon") {
     const url = WEAPON_ICONS[val];
@@ -819,7 +820,7 @@ function getIconSvg(type, val, size = 28) {
       Snezhnaya: `<path d="M12 2v20M4 7l16 10M20 7L4 17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`
     };
     const fallback = `<rect x="3" y="3" width="18" height="18" rx="5" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${rPaths[val] || fallback}</svg>`;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${shadowStyle}" title="${val}">${rPaths[val] || fallback}</svg>`;
   }
 
   let hash = 0;
