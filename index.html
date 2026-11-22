@@ -699,13 +699,23 @@ const STATS = [
   "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
   "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
 ];
-const VERSIONS = [
-  "1.0","1.1","1.2","1.3","1.4","1.5","1.6",
-  "2.0","2.1","2.2","2.3","2.4","2.5","2.6","2.7","2.8",
-  "3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.7","3.8",
-  "4.0","4.1","4.2","4.3","4.4","4.5","4.6","4.7","4.8",
-  "5.0","5.1","5.2","5.3","5.4","5.5","5.6"
-];
+function getDynamicVersions() {
+  const list = [];
+  // Auto-generates 1.0–1.6, 2.0–2.8, 3.0–3.8 ... all the way to 8.8
+  for (let major = 1; major <= 8; major++) {
+    const maxMinor = major === 1 ? 6 : 8;
+    for (let minor = 0; minor <= maxMinor; minor++) {
+      list.push(`${major}.${minor}`);
+    }
+  }
+  // Also include any custom version already saved in CHARACTERS
+  CHARACTERS.forEach(c => {
+    if (c.version && !list.includes(String(c.version))) {
+      list.push(String(c.version));
+    }
+  });
+  return list.sort((a, b) => parseFloat(a) - parseFloat(b));
+}
 
 function getIconSvg(type, val, size = 28) {
   const visionColors = {
@@ -1562,7 +1572,26 @@ function unlockAdmin() {
 }
 
 function populateAdminPickers() {
-  document.getElementById('admVersion').innerHTML = VERSIONS.map(v => `<option value="${v}">${v}</option>`).join('');
+  const dynamicVersions = getDynamicVersions();
+document.getElementById('admVersion').innerHTML =
+  dynamicVersions.map(v => `<option value="${v}">${v}</option>`).join('') +
+  `<option value="__custom__">+ Custom Version...</option>`;
+
+document.getElementById('admVersion').onchange = function () {
+  if (this.value === '__custom__') {
+    const custom = prompt("Enter custom patch version (e.g., 6.4 or 9.0):");
+    if (custom && !isNaN(parseFloat(custom))) {
+      const clean = parseFloat(custom).toFixed(1);
+      const opt = document.createElement('option');
+      opt.value = clean;
+      opt.textContent = clean;
+      this.insertBefore(opt, this.lastElementChild);
+      this.value = clean;
+    } else {
+      this.value = dynamicVersions[dynamicVersions.length - 1];
+    }
+  }
+};
   document.getElementById('admMaterial').innerHTML = MATERIALS.map(m => `<option value="${m}">${m}</option>`).join('');
   document.getElementById('admBoss').innerHTML = BOSSES.map(b => `<option value="${b}">${b}</option>`).join('');
   document.getElementById('admStat').innerHTML = STATS.map(s => `<option value="${s}">${s}</option>`).join('');
