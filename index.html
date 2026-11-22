@@ -778,8 +778,8 @@ function getIconSvg(type, val, size = 28) {
   const shadowStyle = needsShadow ? 'filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));' : '';
   const customUrl = TAXONOMIES.customIcons[`${type}:${val}`];
   if (customUrl) {
-    return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;" class="object-contain rounded-md inline-block" />`;
-  }
+  return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;${shadowStyle}" class="object-contain rounded-md inline-block" />`;
+}
 
   // 2. Built-in fallback SVG emblems
   const visionColors = {
