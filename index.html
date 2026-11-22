@@ -520,11 +520,11 @@
 
   <!-- ==================== ADMIN DASHBOARD MODAL ==================== -->
   <div id="adminModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border-4 border-white my-auto max-h-[92vh] overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 shadow-2xl border-4 border-white my-auto max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
         <div>
-          <h2 class="font-logo text-2xl sm:text-3xl font-bold text-slate-800">⚙️ Admin Character Manager</h2>
-          <p class="text-xs font-bold text-slate-500">Add or edit characters — changes publish live for all players!</p>
+          <h2 class="font-logo text-2xl sm:text-3xl font-bold text-slate-800">⚙️ Admin Live Database Manager</h2>
+          <p class="text-xs font-bold text-slate-500">100% Database-Driven: Add Characters, Elements, Regions, Materials & Boss Icons live!</p>
         </div>
         <button onclick="closeAdminModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-3.5 py-2 rounded-xl text-sm">✕ Close</button>
       </div>
@@ -533,111 +533,162 @@
       <div id="adminLockBox" class="max-w-sm mx-auto py-8 text-center">
         <div class="text-4xl mb-2">🔐</div>
         <h3 class="font-logo text-xl font-bold text-slate-800 mb-1">Admin Verification</h3>
-        <p class="text-xs font-bold text-slate-500 mb-4">Enter your admin passcode to publish global roster updates.</p>
-        <input id="adminPassInput" type="password" placeholder="Admin Passcode (default: mehul2026)" class="w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-3 text-center" />
+        <p class="text-xs font-bold text-slate-500 mb-4">Enter your admin passcode to publish global database updates.</p>
+        <input id="adminPassInput" type="password" placeholder="Admin Passcode" class="w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm mb-3 text-center" />
         <button onclick="unlockAdmin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow text-sm">
           Unlock Dashboard
         </button>
       </div>
 
-      <!-- Unlocked Admin Form + Roster List -->
+      <!-- Unlocked Admin Content -->
       <div id="adminContentBox" class="hidden">
-        <form id="adminCharForm" onsubmit="saveAdminCharacter(event)" class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-6">
-          <div class="flex items-center justify-between mb-3">
-            <h3 id="adminFormTitle" class="font-extrabold text-base text-blue-700">➕ Add New Character (Goes Live Globally)</h3>
-            <button type="button" id="adminCancelEditBtn" onclick="resetAdminForm()" class="hidden text-xs font-extrabold text-rose-600 hover:underline">Cancel Edit</button>
-          </div>
-          <input type="hidden" id="adminEditId" value="" />
+        <!-- Tabs -->
+        <div class="flex gap-2 mb-4 border-b border-slate-200 pb-3">
+          <button type="button" id="tabCharBtn" onclick="switchAdminTab('chars')" class="px-4 py-2 rounded-xl bg-blue-600 text-white font-extrabold text-xs sm:text-sm">
+            👤 Characters Roster
+          </button>
+          <button type="button" id="tabTaxBtn" onclick="switchAdminTab('tax')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-extrabold text-xs sm:text-sm">
+            🎨 Visions, Regions, Materials & Boss Icons
+          </button>
+        </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <!-- Left: Name & Photo Upload -->
-            <div class="md:col-span-4 flex flex-col gap-3">
-              <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">1. Character Name *</label>
-                <input id="admName" type="text" required placeholder="e.g. Arlecchino" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm bg-white" />
+        <!-- TAB 1: CHARACTERS FORM + LIVE ROSTER -->
+        <div id="adminTabChars">
+          <form id="adminCharForm" onsubmit="saveAdminCharacter(event)" class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-6">
+            <div class="flex items-center justify-between mb-3">
+              <h3 id="adminFormTitle" class="font-extrabold text-base text-blue-700">➕ Add New Character (Goes Live Globally)</h3>
+              <button type="button" id="adminCancelEditBtn" onclick="resetAdminForm()" class="hidden text-xs font-extrabold text-rose-600 hover:underline">Cancel Edit</button>
+            </div>
+            <input type="hidden" id="adminEditId" value="" />
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <!-- Left: Name & Photo Upload -->
+              <div class="md:col-span-4 flex flex-col gap-3">
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">1. Character Name *</label>
+                  <input id="admName" type="text" required placeholder="e.g. Arlecchino" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-sm bg-white" />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">2. Upload Portrait Photo *</label>
+                  <label class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-2xl p-3 cursor-pointer transition text-center">
+                    <img id="admPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=genshin" class="w-20 h-20 rounded-xl object-cover object-top border border-slate-200 mb-2" />
+                    <span class="text-xs font-extrabold text-blue-600">📁 Choose File (Auto-uploads to Cloudinary)</span>
+                    <input id="admFileInput" type="file" accept="image/*" onchange="handleAdminImageUpload(event)" class="hidden" />
+                  </label>
+                  <input id="admImgUrl" type="url" placeholder="Or paste direct image URL..." oninput="document.getElementById('admPreviewImg').src=this.value" class="mt-2 w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white" />
+                </div>
               </div>
 
-              <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">2. Upload Portrait Photo *</label>
-                <label class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-2xl p-3 cursor-pointer transition text-center">
-                  <img id="admPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=genshin" class="w-20 h-20 rounded-xl object-cover object-top border border-slate-200 mb-2" />
-                  <span class="text-xs font-extrabold text-blue-600">📁 Choose File (Auto-uploads to Cloudinary)</span>
-                  <input id="admFileInput" type="file" accept="image/*" onchange="handleAdminImageUpload(event)" class="hidden" />
-                </label>
-                <input id="admImgUrl" type="url" placeholder="Or paste direct image URL..." oninput="document.getElementById('admPreviewImg').src=this.value" class="mt-2 w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white" />
+              <!-- Right: Visual Button Pickers & Dropdowns -->
+              <div class="md:col-span-8 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Rarity</label>
+                    <div class="grid grid-cols-2 gap-2" id="admRarityPicker">
+                      <button type="button" data-val="5" onclick="setAdmVisual('rarity','5')" class="adm-vis-btn py-2 rounded-xl border-2 border-blue-600 bg-blue-50 text-slate-800 font-extrabold text-xs">5★ Gold</button>
+                      <button type="button" data-val="4" onclick="setAdmVisual('rarity','4')" class="adm-vis-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">4★ Purple</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Release Version</label>
+                    <select id="admVersion" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-sm outline-none"></select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Vision (Element)</label>
+                  <div id="admVisionPicker" class="grid grid-cols-7 gap-1.5"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Weapon</label>
+                    <div id="admWeaponPicker" class="grid grid-cols-5 gap-1.5"></div>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Region</label>
+                    <div id="admRegionPicker" class="grid grid-cols-4 gap-1.5"></div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Local Specialty</label>
+                    <div class="flex items-center gap-1.5">
+                      <span id="admMatPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden"></span>
+                      <select id="admMaterial" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Weekly Boss Drop</label>
+                    <div class="flex items-center gap-1.5">
+                      <span id="admBossPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden"></span>
+                      <select id="admBoss" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Ascension Stat</label>
+                    <select id="admStat" class="w-full px-2.5 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Right: Visual Button Pickers & Dropdowns -->
-            <div class="md:col-span-8 space-y-3">
-              <!-- Rarity & Version -->
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Rarity</label>
-                  <div class="grid grid-cols-2 gap-2" id="admRarityPicker">
-                    <button type="button" data-val="5" onclick="setAdmVisual('rarity','5')" class="adm-vis-btn py-2 rounded-xl border-2 border-amber-500 bg-amber-50 text-amber-800 font-extrabold text-xs">5★ Gold</button>
-                    <button type="button" data-val="4" onclick="setAdmVisual('rarity','4')" class="adm-vis-btn py-2 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">4★ Purple</button>
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Release Version</label>
-                  <select id="admVersion" class="w-full px-3 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-sm outline-none"></select>
-                </div>
-              </div>
+            <div class="mt-4 flex justify-end">
+              <button id="admSaveBtn" type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl shadow transition text-sm">
+                🚀 Publish Character Live
+              </button>
+            </div>
+          </form>
 
-              <!-- Vision Visual Picker -->
-              <div>
-                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Vision (Element)</label>
-                <div id="admVisionPicker" class="grid grid-cols-7 gap-1.5"></div>
-              </div>
+          <div>
+            <h3 class="font-extrabold text-sm uppercase text-slate-500 mb-2.5">Live Database Roster (<span id="admRosterTotal">0</span> Characters)</h3>
+            <div id="adminRosterList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
 
-              <!-- Weapon & Region Visual Pickers -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Weapon</label>
-                  <div id="admWeaponPicker" class="grid grid-cols-5 gap-1.5"></div>
-                </div>
-                <div>
-                  <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Region</label>
-                  <div id="admRegionPicker" class="grid grid-cols-4 gap-1.5"></div>
-                </div>
+        <!-- TAB 2: ADD / UPDATE VISIONS, REGIONS, MATERIALS & WEEKLY BOSSES WITH CUSTOM LOGOS -->
+        <div id="adminTabTax" class="hidden">
+          <form onsubmit="saveAdminTaxonomy(event)" class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 mb-5">
+            <h3 class="font-extrabold text-base text-blue-700 mb-3">➕ Add New / Update Logo for Element, Region, Material or Boss</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+              <div class="sm:col-span-3">
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Category</label>
+                <select id="taxCategory" onchange="renderAdminTaxList()" class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none">
+                  <option value="visions">Vision / Element</option>
+                  <option value="regions">Region</option>
+                  <option value="materials">Local Specialty</option>
+                  <option value="bosses">Weekly Boss Drop</option>
+                </select>
               </div>
-
-              <!-- Material, Weekly Boss, Ascension Stat Dropdowns with Live Icon Previews -->
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div>
-                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Local Specialty</label>
-                  <div class="flex items-center gap-1.5">
-                    <span id="admMatPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0"></span>
-                    <select id="admMaterial" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
-                  </div>
+              <div class="sm:col-span-4">
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Name (e.g. Nod-Krai / Moonfall Silver)</label>
+                <input id="taxName" type="text" required placeholder="Enter name..." class="w-full px-3 py-2.5 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none" />
+              </div>
+              <div class="sm:col-span-3">
+                <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">Upload Icon / Logo (Cloudinary)</label>
+                <div class="flex items-center gap-2">
+                  <img id="taxPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=icon" class="w-9 h-9 rounded-lg object-contain bg-white border border-slate-200 shrink-0" />
+                  <label class="flex-1 py-2 px-2.5 bg-white border-2 border-dashed border-blue-300 hover:border-blue-500 rounded-xl text-center cursor-pointer text-[11px] font-extrabold text-blue-600">
+                    📁 Choose Logo
+                    <input type="file" accept="image/*" onchange="handleTaxImageUpload(event)" class="hidden" />
+                  </label>
                 </div>
-                <div>
-                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Weekly Boss Drop</label>
-                  <div class="flex items-center gap-1.5">
-                    <span id="admBossPreview" class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0"></span>
-                    <select id="admBoss" onchange="updateAdminDropdownPreviews()" class="w-full px-2 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-[11px] font-extrabold uppercase text-slate-500 mb-1">Ascension Stat</label>
-                  <select id="admStat" class="w-full px-2.5 py-2 rounded-xl border-2 border-slate-200 bg-white font-bold text-xs outline-none"></select>
-                </div>
+                <input id="taxImgUrl" type="hidden" value="" />
+              </div>
+              <div class="sm:col-span-2">
+                <button id="taxSaveBtn" type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow text-xs">
+                  Save Live
+                </button>
               </div>
             </div>
-          </div>
+          </form>
 
-          <div class="mt-4 flex justify-end">
-            <button id="admSaveBtn" type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-6 py-2.5 rounded-xl shadow transition text-sm">
-              🚀 Publish Character Live
-            </button>
+          <div>
+            <h4 class="font-extrabold text-xs uppercase text-slate-500 mb-2">Active Items & Logos in Selected Category (Click any item to replace its logo)</h4>
+            <div id="adminTaxList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-1"></div>
           </div>
-        </form>
-
-        <!-- Current Live Roster -->
-        <div>
-          <h3 class="font-extrabold text-sm uppercase text-slate-500 mb-2.5">Live Roster (<span id="admRosterTotal">0</span> Characters)</h3>
-          <div id="adminRosterList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1"></div>
         </div>
       </div>
     </div>
@@ -645,22 +696,22 @@
 
 <script>
 /* ============================================================================
-   1. CLOUD CONFIGURATION (PASTE YOUR FIREBASE CONFIG & CLOUDINARY PRESET)
+   1. CLOUD CONFIGURATION (FIREBASE REALTIME DB + CLOUDINARY)
    ============================================================================ */
 const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyD57DaYmlpQY6IyCJova9jzMjJm5tjXxN8",
-    authDomain: "genshin-arcade.firebaseapp.com",
-    databaseURL: "https://genshin-arcade-default-rtdb.firebaseio.com",
-    projectId: "genshin-arcade",
-    storageBucket: "genshin-arcade.firebasestorage.app",
-    messagingSenderId: "1095104625917",
-    appId: "1:1095104625917:web:6d379114e2a25c69cb9294",
-    measurementId: "G-6JDZ1JF60F"
-  };
+  apiKey: "AIzaSyD57DaYmlpQY6IyCJova9jzMjJm5tjXxN8",
+  authDomain: "genshin-arcade.firebaseapp.com",
+  databaseURL: "https://genshin-arcade-default-rtdb.firebaseio.com",
+  projectId: "genshin-arcade",
+  storageBucket: "genshin-arcade.firebasestorage.app",
+  messagingSenderId: "1095104625917",
+  appId: "1:1095104625917:web:6d379114e2a25c69cb9294",
+  measurementId: "G-6JDZ1JF60F"
+};
 
 const CLOUDINARY_CLOUD_NAME = "dyxxdwbe";
-const CLOUDINARY_UPLOAD_PRESET = "genshin_portraits"; // Create this Unsigned preset in Cloudinary
-const ADMIN_PASSCODE = "mehul2026"; // Change this to your secret admin password!
+const CLOUDINARY_UPLOAD_PRESET = "genshin_portraits";
+const ADMIN_PASSCODE = "mehul2026";
 
 let db = null;
 let isCloudConnected = false;
@@ -678,18 +729,18 @@ if (FIREBASE_CONFIG.databaseURL) {
 }
 
 /* ============================================================================
-   2. SVG EMBLEMS & TAXONOMIES (Visions, Weapons, Regions, Materials, Bosses)
+   2. DYNAMIC TAXONOMIES & CUSTOM UPLOADED LOGOS (SYNCED WITH FIREBASE)
    ============================================================================ */
-const VISIONS = ["Pyro", "Hydro", "Anemo", "Electro", "Dendro", "Cryo", "Geo"];
+const BASE_VISIONS = ["Pyro", "Hydro", "Anemo", "Electro", "Dendro", "Cryo", "Geo"];
 const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
-const REGIONS = ["Mondstadt", "Liyue", "Inazuma", "Sumeru", "Fontaine", "Natlan", "Snezhnaya"];
-const MATERIALS = [
+const BASE_REGIONS = ["Mondstadt", "Liyue", "Inazuma", "Sumeru", "Fontaine", "Natlan", "Snezhnaya"];
+const BASE_MATERIALS = [
   "Cecilia", "Windwheel Aster", "Valberry", "Cor Lapis", "Glaze Lily",
   "Qingxin", "Silk Flower", "Sakura Bloom", "Naku Weed", "Onikabuto",
   "Kalpalata Lotus", "Scarab", "Padisarah", "Lumidouce Bell", "Lakelight Lily",
   "Subdetection Unit", "Saurian Claw Succulent", "Sprayfeather Gill"
 ];
-const BOSSES = [
+const BASE_BOSSES = [
   "Dvalin's Sigh", "Boreas's Ring", "Shadow of the Warrior", "Bloodjade Branch",
   "Ashen Heart", "Mudra of the Malefic General", "Puppet Strings", "Worldspan Fern",
   "Everamber", "Lightless Eye", "Silken Feather", "Eroded Horn"
@@ -699,16 +750,24 @@ const STATS = [
   "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
   "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
 ];
+
+// Live merged taxonomies (Base + Custom from Firebase)
+let TAXONOMIES = {
+  visions: [...BASE_VISIONS],
+  regions: [...BASE_REGIONS],
+  materials: [...BASE_MATERIALS],
+  bosses: [...BASE_BOSSES],
+  customIcons: {} // key: "vision:Pyro" -> "https://res.cloudinary.com/..."
+};
+
 function getDynamicVersions() {
   const list = [];
-  // Auto-generates 1.0–1.6, 2.0–2.8, 3.0–3.8 ... all the way to 8.8
   for (let major = 1; major <= 8; major++) {
     const maxMinor = major === 1 ? 6 : 8;
     for (let minor = 0; minor <= maxMinor; minor++) {
       list.push(`${major}.${minor}`);
     }
   }
-  // Also include any custom version already saved in CHARACTERS
   CHARACTERS.forEach(c => {
     if (c.version && !list.includes(String(c.version))) {
       list.push(String(c.version));
@@ -718,12 +777,19 @@ function getDynamicVersions() {
 }
 
 function getIconSvg(type, val, size = 28) {
+  // 1. Check if Admin uploaded a custom logo/photo to Cloudinary for this item!
+  const customUrl = TAXONOMIES.customIcons[`${type}:${val}`];
+  if (customUrl) {
+    return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;" class="object-contain rounded-md inline-block" />`;
+  }
+
+  // 2. Built-in fallback SVG emblems
   const visionColors = {
     Pyro: "#ef4444", Hydro: "#3b82f6", Anemo: "#14b8a6",
     Electro: "#a855f7", Dendro: "#22c55e", Cryo: "#38bdf8", Geo: "#eab308"
   };
   if (type === "vision") {
-    const c = visionColors[val] || "#64748b";
+    const c = visionColors[val] || "#6366f1";
     const paths = {
       Pyro: `<path d="M12 2c2 4-1 6 1 9 1.5 2 4 1 4-2 2 2.5 2.5 6.5 0 9.5-2.5 3-7.5 3-10 0C4.5 15.5 6 10 12 2z" fill="${c}"/>`,
       Hydro: `<path d="M12 2.5C12 2.5 6 9.5 6 14a6 6 0 0012 0c0-4.5-6-11.5-6-11.5zm-2 12a2.5 2.5 0 012-2.5" fill="${c}"/>`,
@@ -733,7 +799,8 @@ function getIconSvg(type, val, size = 28) {
       Cryo: `<path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/>`,
       Geo: `<polygon points="12,2 21,12 12,22 3,12" fill="${c}"/><polygon points="12,7 16,12 12,17 8,12" fill="#fff" fill-opacity="0.45"/>`
     };
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${paths[val] || ''}</svg>`;
+    const fallback = `<circle cx="12" cy="12" r="9" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${paths[val] || fallback}</svg>`;
   }
 
   if (type === "weapon") {
@@ -762,10 +829,10 @@ function getIconSvg(type, val, size = 28) {
       Natlan: `<path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1 3-6z" fill="${c}"/>`,
       Snezhnaya: `<path d="M12 2v20M4 7l16 10M20 7L4 17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`
     };
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${rPaths[val] || ''}</svg>`;
+    const fallback = `<rect x="3" y="3" width="18" height="18" rx="5" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${rPaths[val] || fallback}</svg>`;
   }
 
-  // Deterministic Emblem Generator for Local Specialties & Weekly Boss Drops
   let hash = 0;
   for (let i = 0; i < val.length; i++) hash = val.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash) % 360;
@@ -783,62 +850,43 @@ function getIconSvg(type, val, size = 28) {
 }
 
 /* ============================================================================
-   3. DEFAULT ROSTER (SEEDED TO CLOUD OR LOCALSTORAGE)
+   3. 100% DATABASE-DRIVEN CHARACTERS & TAXONOMY SYNC
    ============================================================================ */
-const DEFAULT_CHARACTERS = [
-  { id: "zhongli", name: "Zhongli", rarity: "5", region: "Liyue", vision: "Geo", weapon: "Polearm", version: "1.1", material: "Cor Lapis", boss: "Tusk of Monoceros Caeli", stat: "Geo DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Zhongli.png" },
-  { id: "hutao", name: "Hu Tao", rarity: "5", region: "Liyue", vision: "Pyro", weapon: "Polearm", version: "1.3", material: "Silk Flower", boss: "Shard of a Foul Legacy", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Hutao.png" },
-  { id: "raiden", name: "Raiden Shogun", rarity: "5", region: "Inazuma", vision: "Electro", weapon: "Polearm", version: "2.1", material: "Tenkumo Fruit", boss: "Molten Moment", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Shougun.png" },
-  { id: "furina", name: "Furina", rarity: "5", region: "Fontaine", vision: "Hydro", weapon: "Sword", version: "4.2", material: "Lakelight Lily", boss: "Lightless Mass", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Furina.png" },
-  { id: "nahida", name: "Nahida", rarity: "5", region: "Sumeru", vision: "Dendro", weapon: "Catalyst", version: "3.2", material: "Kalpalata Lotus", boss: "Puppet Strings", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Nahida.png" },
-  { id: "kazuha", name: "Kaedehara Kazuha", rarity: "5", region: "Inazuma", vision: "Anemo", weapon: "Sword", version: "1.6", material: "Sea Ganoderma", boss: "Gilded Scale", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Kazuha.png" },
-  { id: "neuvillette", name: "Neuvillette", rarity: "5", region: "Fontaine", vision: "Hydro", weapon: "Catalyst", version: "4.1", material: "Lumitoile", boss: "Everamber", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Neuvillette.png" },
-  { id: "arlecchino", name: "Arlecchino", rarity: "5", region: "Snezhnaya", vision: "Pyro", weapon: "Polearm", version: "4.6", material: "Rainbow Rose", boss: "Fading Candle", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Arlecchino.png" },
-  { id: "ganyu", name: "Ganyu", rarity: "5", region: "Liyue", vision: "Cryo", weapon: "Bow", version: "1.2", material: "Qingxin", boss: "Shadow of the Warrior", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Ganyu.png" },
-  { id: "xiao", name: "Xiao", rarity: "5", region: "Liyue", vision: "Anemo", weapon: "Polearm", version: "1.3", material: "Qingxin", boss: "Shadow of the Warrior", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Xiao.png" },
-  { id: "venti", name: "Venti", rarity: "5", region: "Mondstadt", vision: "Anemo", weapon: "Bow", version: "1.0", material: "Cecilia", boss: "Tail of Boreas", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Venti.png" },
-  { id: "diluc", name: "Diluc", rarity: "5", region: "Mondstadt", vision: "Pyro", weapon: "Claymore", version: "1.0", material: "Small Lamp Grass", boss: "Dvalin's Plume", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Diluc.png" },
-  { id: "ayaka", name: "Kamisato Ayaka", rarity: "5", region: "Inazuma", vision: "Cryo", weapon: "Sword", version: "2.0", material: "Sakura Bloom", boss: "Bloodjade Branch", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Ayaka.png" },
-  { id: "yelan", name: "Yelan", rarity: "5", region: "Liyue", vision: "Hydro", weapon: "Bow", version: "2.7", material: "Starconch", boss: "Gilded Scale", stat: "CRIT Rate%", img: "https://enka.network/ui/UI_AvatarIcon_Yelan.png" },
-  { id: "navia", name: "Navia", rarity: "5", region: "Fontaine", vision: "Geo", weapon: "Claymore", version: "4.3", material: "Spring of the First Dewdrop", boss: "Lightless Silk String", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Navia.png" },
-  { id: "mavuika", name: "Mavuika", rarity: "5", region: "Natlan", vision: "Pyro", weapon: "Claymore", version: "5.3", material: "Withering Purpurbloom", boss: "Eroded Horn", stat: "CRIT DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Mavuika.png" },
-  { id: "bennett", name: "Bennett", rarity: "4", region: "Mondstadt", vision: "Pyro", weapon: "Sword", version: "1.0", material: "Windwheel Aster", boss: "Dvalin's Plume", stat: "Energy Recharge%", img: "https://enka.network/ui/UI_AvatarIcon_Bennett.png" },
-  { id: "xingqiu", name: "Xingqiu", rarity: "4", region: "Liyue", vision: "Hydro", weapon: "Sword", version: "1.0", material: "Silk Flower", boss: "Tail of Boreas", stat: "ATK%", img: "https://enka.network/ui/UI_AvatarIcon_Xingqiu.png" },
-  { id: "xiangling", name: "Xiangling", rarity: "4", region: "Liyue", vision: "Pyro", weapon: "Polearm", version: "1.0", material: "Jueyun Chili", boss: "Dvalin's Claw", stat: "Elemental Mastery", img: "https://enka.network/ui/UI_AvatarIcon_Xiangling.png" },
-  { id: "fischl", name: "Fischl", rarity: "4", region: "Mondstadt", vision: "Electro", weapon: "Bow", version: "1.0", material: "Small Lamp Grass", boss: "Spirit Locket of Boreas", stat: "ATK%", img: "https://enka.network/ui/UI_AvatarIcon_Fischl.png" },
-  { id: "kuki", name: "Kuki Shinobu", rarity: "4", region: "Inazuma", vision: "Electro", weapon: "Sword", version: "2.7", material: "Naku Weed", boss: "Tears of the Calamitous God", stat: "HP%", img: "https://enka.network/ui/UI_AvatarIcon_Shinobu.png" },
-  { id: "sucrose", name: "Sucrose", rarity: "4", region: "Mondstadt", vision: "Anemo", weapon: "Catalyst", version: "1.0", material: "Windwheel Aster", boss: "Spirit Locket of Boreas", stat: "Anemo DMG%", img: "https://enka.network/ui/UI_AvatarIcon_Sucrose.png" },
-  { id: "barbara", name: "Barbara", rarity: "4", region: "Mondstadt", vision: "Hydro", weapon: "Catalyst", version: "1.0", material: "Philanemo Mushroom", boss: "Ring of Boreas", stat: "HP%", img: "https://enka.network/ui/UI_AvatarIcon_Barbara.png" },
-  { id: "noelle", name: "Noelle", rarity: "4", region: "Mondstadt", vision: "Geo", weapon: "Claymore", version: "1.0", material: "Valberry", boss: "Dvalin's Claw", stat: "DEF%", img: "https://enka.network/ui/UI_AvatarIcon_Noelle.png" }
-];
-
 let CHARACTERS = [];
 
-function initCharacterSync() {
+function initCloudSync() {
   if (isCloudConnected) {
-    const charRef = db.ref('characters');
-    charRef.on('value', (snap) => {
+    // 1. Live Character Roster
+    db.ref('characters').on('value', (snap) => {
       const val = snap.val();
-      if (!val) {
-        // Seed initial roster to Firebase once
-        const seedObj = {};
-        DEFAULT_CHARACTERS.forEach(c => { seedObj[c.id] = c; });
-        charRef.set(seedObj);
-      } else {
-        CHARACTERS = Object.values(val);
-        onRosterUpdated();
-      }
+      CHARACTERS = val ? Object.values(val) : [];
+      onRosterUpdated();
+    });
+
+    // 2. Live Taxonomies & Custom Icons/Logos
+    db.ref('taxonomies').on('value', (snap) => {
+      const val = snap.val() || {};
+      const merge = (base, extra) => Array.from(new Set([...base, ...(extra ? Object.values(extra) : [])]));
+      TAXONOMIES.visions = merge(BASE_VISIONS, val.visions);
+      TAXONOMIES.regions = merge(BASE_REGIONS, val.regions);
+      TAXONOMIES.materials = merge(BASE_MATERIALS, val.materials);
+      TAXONOMIES.bosses = merge(BASE_BOSSES, val.bosses);
+      TAXONOMIES.customIcons = val.customIcons || {};
+      populateAdminPickers();
+      renderAdminTaxList();
     });
   } else {
-    const saved = localStorage.getItem('teyvat_roster_v1');
-    CHARACTERS = saved ? JSON.parse(saved) : [...DEFAULT_CHARACTERS];
-    if (!saved) localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    const savedChars = localStorage.getItem('teyvat_roster_v2');
+    CHARACTERS = savedChars ? JSON.parse(savedChars) : [];
+    const savedTax = localStorage.getItem('teyvat_tax_v2');
+    if (savedTax) TAXONOMIES = JSON.parse(savedTax);
     onRosterUpdated();
   }
 }
 
 function onRosterUpdated() {
   document.getElementById('rosterCountText').textContent = `${CHARACTERS.length} Characters`;
+  populateAdminPickers();
   renderAdminRosterList();
   if (!document.getElementById('wdGameView').classList.contains('hidden')) {
     renderWdQuickGrid();
@@ -875,16 +923,9 @@ function copyRoomCode(elId) {
    ============================================================================ */
 let gwSelectedPool = 'all';
 let gwState = {
-  roomCode: '',
-  role: 'p1', // 'p1' or 'p2'
-  playerName: 'Traveler',
-  pool: 'all',
-  boardChars: [],
-  eliminatedIds: new Set(),
-  mySecretId: null,
-  finalGuessMode: false,
-  pendingGuessChar: null,
-  roomRef: null
+  roomCode: '', role: 'p1', playerName: 'Traveler', pool: 'all',
+  boardChars: [], eliminatedIds: new Set(), mySecretId: null,
+  finalGuessMode: false, pendingGuessChar: null
 };
 
 function selectGwPool(pool) {
@@ -907,25 +948,16 @@ function createGwRoom() {
   const name = document.getElementById('gwCreateName').value.trim() || 'Traveler';
   const code = genRoomCode();
   const poolChars = getPoolCharacters(gwSelectedPool);
-  if (poolChars.length < 4) return alert("Not enough characters in this pool!");
+  if (poolChars.length < 2) return alert("Add at least 2 characters in the Admin Dashboard first!");
 
   gwState = {
-    roomCode: code,
-    role: 'p1',
-    playerName: name,
-    pool: gwSelectedPool,
-    boardChars: poolChars,
-    eliminatedIds: new Set(),
-    mySecretId: null,
-    finalGuessMode: false,
-    pendingGuessChar: null
+    roomCode: code, role: 'p1', playerName: name, pool: gwSelectedPool,
+    boardChars: poolChars, eliminatedIds: new Set(), mySecretId: null,
+    finalGuessMode: false, pendingGuessChar: null
   };
 
   const initialRoom = {
-    code,
-    pool: gwSelectedPool,
-    status: 'playing',
-    winner: null,
+    code, pool: gwSelectedPool, status: 'playing', winner: null,
     p1: { name, secretId: null, remaining: poolChars.length },
     p2: { name: 'Waiting...', secretId: null, remaining: poolChars.length },
     messages: [{ sender: 'System', text: `Room ${code} created (${gwSelectedPool === 'all' ? 'All Characters' : gwSelectedPool + '★ Only'}). Share the code!` }]
@@ -945,22 +977,15 @@ function joinGwRoom() {
       if (!room) return alert("Room not found! Check the code.");
       const poolChars = getPoolCharacters(room.pool);
       gwState = {
-        roomCode: code,
-        role: 'p2',
-        playerName: name,
-        pool: room.pool,
-        boardChars: poolChars,
-        eliminatedIds: new Set(),
-        mySecretId: null,
-        finalGuessMode: false,
-        pendingGuessChar: null
+        roomCode: code, role: 'p2', playerName: name, pool: room.pool,
+        boardChars: poolChars, eliminatedIds: new Set(), mySecretId: null,
+        finalGuessMode: false, pendingGuessChar: null
       };
       db.ref(`gw_rooms/${code}/p2`).update({ name, remaining: poolChars.length });
       pushGwMessage(code, 'System', `${name} joined the room!`);
       startGwSession(room, false);
     });
   } else {
-    alert("Cloud sync isn't configured yet—creating a local test session with your code!");
     document.getElementById('gwCreateName').value = name;
     createGwRoom();
   }
@@ -981,11 +1006,9 @@ function startGwSession(roomData, isCreator) {
     if (isCreator) ref.set(roomData);
     ref.on('value', (snap) => {
       const data = snap.val();
-      if (!data) return;
-      syncGwRoomUI(data);
+      if (data) syncGwRoomUI(data);
     });
   } else {
-    // Local fallback simulation
     const botChar = gwState.boardChars[Math.floor(Math.random() * gwState.boardChars.length)];
     roomData.p2 = { name: 'Paimon (Sim)', secretId: botChar.id, remaining: gwState.boardChars.length };
     window._localGwRoom = roomData;
@@ -1003,7 +1026,6 @@ function syncGwRoomUI(data) {
   document.getElementById('gwMyCount').textContent = me.remaining;
   document.getElementById('gwOppCount').textContent = opp.remaining;
 
-  // Render Chat
   const chatBox = document.getElementById('gwChatMessages');
   const msgs = data.messages ? Object.values(data.messages) : [];
   chatBox.innerHTML = msgs.map(m => {
@@ -1018,7 +1040,6 @@ function syncGwRoomUI(data) {
   }).join('');
   chatBox.scrollTop = chatBox.scrollHeight;
 
-  // Check Winner
   if (data.winner) {
     const didIWin = data.winner.role === gwState.role;
     const myChar = CHARACTERS.find(c => c.id === data[myKey]?.secretId) || gwState.boardChars[0];
@@ -1050,7 +1071,6 @@ function handleGwTileClick(charId) {
   const char = gwState.boardChars.find(c => c.id === charId);
   if (!char) return;
 
-  // Step 1: Pick Secret Character
   if (!gwState.mySecretId) {
     gwState.mySecretId = charId;
     document.getElementById('gwMySecretPreview').innerHTML = `<img src="${char.img}" class="w-full h-full object-cover object-top" />`;
@@ -1069,7 +1089,6 @@ function handleGwTileClick(charId) {
     return;
   }
 
-  // Step 2: Final Guess Mode
   if (gwState.finalGuessMode) {
     if (gwState.eliminatedIds.has(charId)) return;
     gwState.pendingGuessChar = char;
@@ -1079,12 +1098,9 @@ function handleGwTileClick(charId) {
     return;
   }
 
-  // Step 3: Toggle Elimination
-  if (gwState.eliminatedIds.has(charId)) {
-    gwState.eliminatedIds.delete(charId);
-  } else {
-    gwState.eliminatedIds.add(charId);
-  }
+  if (gwState.eliminatedIds.has(charId)) gwState.eliminatedIds.delete(charId);
+  else gwState.eliminatedIds.add(charId);
+
   const rem = gwState.boardChars.length - gwState.eliminatedIds.size;
   renderGwBoard();
 
@@ -1172,15 +1188,8 @@ function closeGameOverModal() {
    6. GENSHINDLE (SINGLE PLAYER ENDLESS + MULTIPLAYER RACE)
    ============================================================================ */
 let wdState = {
-  mode: 'solo', // 'solo' or 'multi'
-  roomCode: '',
-  role: 'p1',
-  playerName: 'Traveler',
-  targetChar: null,
-  dynamicType: 'material', // 'material', 'boss', 'stat'
-  guesses: [],
-  roundOver: false,
-  startTime: 0
+  mode: 'solo', roomCode: '', role: 'p1', playerName: 'Traveler',
+  targetChar: null, dynamicType: 'material', guesses: [], roundOver: false, startTime: 0
 };
 let wdTimerInterval = null;
 
@@ -1192,6 +1201,7 @@ function setSessionHighscore(val) {
 }
 
 function startGenshindleSolo() {
+  if (CHARACTERS.length === 0) return alert("Add at least 1 character in the Admin Dashboard first!");
   wdState.mode = 'solo';
   wdState.streak = 0;
   navigateTo('wdGame');
@@ -1206,6 +1216,7 @@ function startGenshindleSolo() {
 }
 
 function createWdRoom() {
+  if (CHARACTERS.length === 0) return alert("Add at least 1 character in the Admin Dashboard first!");
   const name = document.getElementById('wdCreateName').value.trim() || 'Traveler';
   const code = genRoomCode();
   const target = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
@@ -1213,24 +1224,13 @@ function createWdRoom() {
   const dyn = types[Math.floor(Math.random() * types.length)];
 
   wdState = {
-    mode: 'multi',
-    roomCode: code,
-    role: 'p1',
-    playerName: name,
-    targetChar: target,
-    dynamicType: dyn,
-    guesses: [],
-    roundOver: false,
-    startTime: Date.now()
+    mode: 'multi', roomCode: code, role: 'p1', playerName: name,
+    targetChar: target, dynamicType: dyn, guesses: [], roundOver: false, startTime: Date.now()
   };
 
   const roomObj = {
-    code,
-    round: 1,
-    targetId: target.id,
-    dynamicType: dyn,
-    startTime: wdState.startTime,
-    firstWinner: null,
+    code, round: 1, targetId: target.id, dynamicType: dyn,
+    startTime: wdState.startTime, firstWinner: null,
     p1: { name, tries: 0, greens: 0, yellows: 0 },
     p2: { name: 'Waiting...', tries: 0, greens: 0, yellows: 0 },
     messages: [{ sender: 'System', text: `Race Room ${code} started! Solve the character first!` }]
@@ -1250,22 +1250,15 @@ function joinWdRoom() {
       if (!room) return alert("Race room not found!");
       const target = CHARACTERS.find(c => c.id === room.targetId) || CHARACTERS[0];
       wdState = {
-        mode: 'multi',
-        roomCode: code,
-        role: 'p2',
-        playerName: name,
-        targetChar: target,
-        dynamicType: room.dynamicType,
-        guesses: [],
-        roundOver: false,
-        startTime: room.startTime || Date.now()
+        mode: 'multi', roomCode: code, role: 'p2', playerName: name,
+        targetChar: target, dynamicType: room.dynamicType, guesses: [],
+        roundOver: false, startTime: room.startTime || Date.now()
       };
       db.ref(`wd_rooms/${code}/p2`).update({ name, tries: 0, greens: 0, yellows: 0 });
       pushWdMessage(code, 'System', `${name} joined the race!`);
       startWdMultiSession(room, false);
     });
   } else {
-    alert("Cloud sync not configured — starting local race session!");
     document.getElementById('wdCreateName').value = name;
     createWdRoom();
   }
@@ -1288,7 +1281,6 @@ function startWdMultiSession(roomObj, isCreator) {
     ref.on('value', (snap) => {
       const data = snap.val();
       if (!data) return;
-      // Handle Next Round sync
       if (data.targetId && wdState.targetChar && data.targetId !== wdState.targetChar.id) {
         wdState.targetChar = CHARACTERS.find(c => c.id === data.targetId) || CHARACTERS[0];
         wdState.dynamicType = data.dynamicType;
@@ -1313,7 +1305,6 @@ function syncWdMultiUI(data) {
   document.getElementById('wdOppGreens').textContent = opp.greens;
   document.getElementById('wdOppYellows').textContent = opp.yellows;
 
-  // Opponent won banner (non-blocking!)
   if (data.firstWinner && data.firstWinner.role !== wdState.role && !wdState.roundOver) {
     document.getElementById('wdOppWonBanner').classList.remove('hidden');
     document.getElementById('wdOppWonText').textContent = `${data.firstWinner.name} solved it in ${data.firstWinner.tries} tries!`;
@@ -1321,7 +1312,6 @@ function syncWdMultiUI(data) {
     document.getElementById('wdOppWonBanner').classList.add('hidden');
   }
 
-  // Chat
   const chatBox = document.getElementById('wdChatMessages');
   const msgs = data.messages ? Object.values(data.messages) : [];
   chatBox.innerHTML = msgs.map(m => {
@@ -1382,9 +1372,7 @@ function renderWdQuickGrid() {
   }).join('');
 }
 
-function filterWdGrid() {
-  renderWdQuickGrid();
-}
+function filterWdGrid() { renderWdQuickGrid(); }
 
 function submitWdGuess(charId) {
   if (wdState.roundOver || wdState.guesses.length >= 5) return;
@@ -1392,14 +1380,11 @@ function submitWdGuess(charId) {
   const target = wdState.targetChar;
   if (!guess || !target) return;
 
-  if (wdState.guesses.length === 0) {
-    document.getElementById('wdGuessRows').innerHTML = '';
-  }
+  if (wdState.guesses.length === 0) document.getElementById('wdGuessRows').innerHTML = '';
 
   wdState.guesses.push(guess);
   document.getElementById('wdTriesCount').textContent = wdState.guesses.length;
 
-  // Evaluate Columns
   const nameMatch = guess.id === target.id;
   const dynMatch = guess[wdState.dynamicType] === target[wdState.dynamicType];
   const regMatch = guess.region === target.region;
@@ -1414,16 +1399,14 @@ function submitWdGuess(charId) {
   if (verDiff === 0) verStatus = 'green';
   else if (Math.abs(verDiff) <= 0.3) verStatus = 'yellow';
 
-  // Count Greens & Yellows for Multiplayer Progress
   const greens = [nameMatch, dynMatch, regMatch, visMatch, wepMatch, verStatus === 'green'].filter(Boolean).length;
   const yellows = verStatus === 'yellow' ? 1 : 0;
 
-  // Dynamic Cell HTML (Logo for material/boss, text for stat)
   let dynCellInner = '';
   if (wdState.dynamicType === 'stat') {
     dynCellInner = `<span class="text-xs font-extrabold leading-tight px-1">${guess.stat}</span>`;
   } else {
-    dynCellInner = `<div class="bg-white/90 p-1.5 rounded-xl shadow-sm">${getIconSvg(wdState.dynamicType, guess[wdState.dynamicType], 28)}</div>`;
+    dynCellInner = `<div class="bg-white/95 p-1.5 rounded-xl shadow-sm flex items-center justify-center">${getIconSvg(wdState.dynamicType, guess[wdState.dynamicType], 28)}</div>`;
   }
 
   const bgClass = (ok) => ok ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-rose-500 text-white border-rose-600';
@@ -1437,13 +1420,13 @@ function submitWdGuess(charId) {
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xs px-1 ${bgClass(nameMatch)}">${guess.name}</div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(regMatch)}" title="${guess.region}">
-        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('region', guess.region, 28)}</div>
+        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('region', guess.region, 28)}</div>
       </div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(visMatch)}" title="${guess.vision}">
-        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('vision', guess.vision, 28)}</div>
+        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('vision', guess.vision, 28)}</div>
       </div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(wepMatch)}" title="${guess.weapon}">
-        <div class="bg-white/95 p-1.5 rounded-xl">${getIconSvg('weapon', guess.weapon, 28)}</div>
+        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('weapon', guess.weapon, 28)}</div>
       </div>
       <div class="h-14 rounded-2xl border-2 flex flex-col items-center justify-center font-extrabold text-white ${verBg}">
         <span class="text-sm leading-none">${verArrow}</span>
@@ -1453,16 +1436,12 @@ function submitWdGuess(charId) {
   `;
   document.getElementById('wdGuessRows').insertAdjacentHTML('afterbegin', rowHtml);
 
-  // Sync Multiplayer Stats
   if (wdState.mode === 'multi' && isCloudConnected) {
     db.ref(`wd_rooms/${wdState.roomCode}/${wdState.role}`).update({
-      tries: wdState.guesses.length,
-      greens,
-      yellows
+      tries: wdState.guesses.length, greens, yellows
     });
   }
 
-  // Check Win / Loss
   if (nameMatch) {
     wdState.roundOver = true;
     document.getElementById('wdRoundOverBar').classList.remove('hidden');
@@ -1495,11 +1474,8 @@ function submitWdGuess(charId) {
 }
 
 function startNextWdRound() {
-  if (wdState.mode === 'solo') {
-    initWdRound();
-  } else {
-    giveUpAndNextWdRound();
-  }
+  if (wdState.mode === 'solo') initWdRound();
+  else giveUpAndNextWdRound();
 }
 
 function giveUpAndNextWdRound() {
@@ -1510,10 +1486,7 @@ function giveUpAndNextWdRound() {
 
   if (wdState.mode === 'multi' && isCloudConnected) {
     db.ref(`wd_rooms/${wdState.roomCode}`).update({
-      targetId: nextTarget.id,
-      dynamicType: nextDyn,
-      startTime: now,
-      firstWinner: null,
+      targetId: nextTarget.id, dynamicType: nextDyn, startTime: now, firstWinner: null,
       'p1/tries': 0, 'p1/greens': 0, 'p1/yellows': 0,
       'p2/tries': 0, 'p2/greens': 0, 'p2/yellows': 0
     });
@@ -1547,7 +1520,7 @@ function pushWdMessage(code, sender, text) {
 }
 
 /* ============================================================================
-   7. ADMIN DASHBOARD (GLOBAL LIVE SYNC + CLOUDINARY UPLOAD)
+   7. ADMIN DASHBOARD (CHARACTERS + DYNAMIC VISIONS/REGIONS/MATERIALS/BOSSES)
    ============================================================================ */
 let adminFormState = { rarity: '5', vision: 'Pyro', weapon: 'Sword', region: 'Mondstadt' };
 
@@ -1566,37 +1539,51 @@ function unlockAdmin() {
     document.getElementById('adminContentBox').classList.remove('hidden');
     populateAdminPickers();
     renderAdminRosterList();
+    renderAdminTaxList();
   } else {
     alert("Wrong Admin Passcode!");
   }
 }
 
+function switchAdminTab(tab) {
+  const isChars = tab === 'chars';
+  document.getElementById('adminTabChars').classList.toggle('hidden', !isChars);
+  document.getElementById('adminTabTax').classList.toggle('hidden', isChars);
+  document.getElementById('tabCharBtn').className = isChars
+    ? "px-4 py-2 rounded-xl bg-blue-600 text-white font-extrabold text-xs sm:text-sm"
+    : "px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-extrabold text-xs sm:text-sm";
+  document.getElementById('tabTaxBtn').className = !isChars
+    ? "px-4 py-2 rounded-xl bg-blue-600 text-white font-extrabold text-xs sm:text-sm"
+    : "px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-extrabold text-xs sm:text-sm";
+}
+
 function populateAdminPickers() {
   const dynamicVersions = getDynamicVersions();
-document.getElementById('admVersion').innerHTML =
-  dynamicVersions.map(v => `<option value="${v}">${v}</option>`).join('') +
-  `<option value="__custom__">+ Custom Version...</option>`;
+  document.getElementById('admVersion').innerHTML =
+    dynamicVersions.map(v => `<option value="${v}">${v}</option>`).join('') +
+    `<option value="__custom__">+ Custom Version...</option>`;
 
-document.getElementById('admVersion').onchange = function () {
-  if (this.value === '__custom__') {
-    const custom = prompt("Enter custom patch version (e.g., 6.4 or 9.0):");
-    if (custom && !isNaN(parseFloat(custom))) {
-      const clean = parseFloat(custom).toFixed(1);
-      const opt = document.createElement('option');
-      opt.value = clean;
-      opt.textContent = clean;
-      this.insertBefore(opt, this.lastElementChild);
-      this.value = clean;
-    } else {
-      this.value = dynamicVersions[dynamicVersions.length - 1];
+  document.getElementById('admVersion').onchange = function () {
+    if (this.value === '__custom__') {
+      const custom = prompt("Enter custom patch version (e.g., 6.4 or 9.0):");
+      if (custom && !isNaN(parseFloat(custom))) {
+        const clean = parseFloat(custom).toFixed(1);
+        const opt = document.createElement('option');
+        opt.value = clean;
+        opt.textContent = clean;
+        this.insertBefore(opt, this.lastElementChild);
+        this.value = clean;
+      } else {
+        this.value = dynamicVersions[dynamicVersions.length - 1];
+      }
     }
-  }
-};
-  document.getElementById('admMaterial').innerHTML = MATERIALS.map(m => `<option value="${m}">${m}</option>`).join('');
-  document.getElementById('admBoss').innerHTML = BOSSES.map(b => `<option value="${b}">${b}</option>`).join('');
+  };
+
+  document.getElementById('admMaterial').innerHTML = TAXONOMIES.materials.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('admBoss').innerHTML = TAXONOMIES.bosses.map(b => `<option value="${b}">${b}</option>`).join('');
   document.getElementById('admStat').innerHTML = STATS.map(s => `<option value="${s}">${s}</option>`).join('');
 
-  document.getElementById('admVisionPicker').innerHTML = VISIONS.map(v => `
+  document.getElementById('admVisionPicker').innerHTML = TAXONOMIES.visions.map(v => `
     <button type="button" data-group="vision" data-val="${v}" onclick="setAdmVisual('vision','${v}')" title="${v}"
       class="adm-vis-btn p-1.5 rounded-xl border-2 border-slate-200 bg-white flex items-center justify-center hover:border-blue-400">
       ${getIconSvg('vision', v, 22)}
@@ -1610,7 +1597,7 @@ document.getElementById('admVersion').onchange = function () {
     </button>
   `).join('');
 
-  document.getElementById('admRegionPicker').innerHTML = REGIONS.map(r => `
+  document.getElementById('admRegionPicker').innerHTML = TAXONOMIES.regions.map(r => `
     <button type="button" data-group="region" data-val="${r}" onclick="setAdmVisual('region','${r}')" title="${r}"
       class="adm-vis-btn p-1.5 rounded-xl border-2 border-slate-200 bg-white flex items-center justify-center hover:border-blue-400">
       ${getIconSvg('region', r, 20)}
@@ -1644,46 +1631,124 @@ function setAdmVisual(group, val) {
 function updateAdminDropdownPreviews() {
   const mat = document.getElementById('admMaterial').value;
   const boss = document.getElementById('admBoss').value;
-  document.getElementById('admMatPreview').innerHTML = getIconSvg('material', mat, 22);
-  document.getElementById('admBossPreview').innerHTML = getIconSvg('boss', boss, 22);
+  document.getElementById('admMatPreview').innerHTML = mat ? getIconSvg('material', mat, 22) : '';
+  document.getElementById('admBossPreview').innerHTML = boss ? getIconSvg('boss', boss, 22) : '';
+}
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  const data = await res.json();
+  return data.secure_url || null;
 }
 
 async function handleAdminImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Immediate local preview
   const reader = new FileReader();
   reader.onload = (ev) => { document.getElementById('admPreviewImg').src = ev.target.result; };
   reader.readAsDataURL(file);
 
-  // Upload to Cloudinary so everyone sees the live HTTPS image
   const saveBtn = document.getElementById('admSaveBtn');
   saveBtn.disabled = true;
-  saveBtn.textContent = "⏳ Uploading Portrait to Cloudinary...";
+  saveBtn.textContent = "⏳ Uploading to Cloudinary...";
 
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: 'POST',
-      body: formData
-    });
-    const data = await res.json();
-    if (data.secure_url) {
-      document.getElementById('admImgUrl').value = data.secure_url;
-      document.getElementById('admPreviewImg').src = data.secure_url;
+    const url = await uploadToCloudinary(file);
+    if (url) {
+      document.getElementById('admImgUrl').value = url;
+      document.getElementById('admPreviewImg').src = url;
     } else {
-      alert("Cloudinary upload note: Make sure unsigned preset '" + CLOUDINARY_UPLOAD_PRESET + "' exists, or paste an image URL directly.");
+      alert("Cloudinary upload failed — verify unsigned preset '" + CLOUDINARY_UPLOAD_PRESET + "' is active.");
     }
-  } catch (err) {
-    console.error(err);
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = "🚀 Publish Character Live";
   }
+}
+
+async function handleTaxImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => { document.getElementById('taxPreviewImg').src = ev.target.result; };
+  reader.readAsDataURL(file);
+
+  const btn = document.getElementById('taxSaveBtn');
+  btn.disabled = true;
+  btn.textContent = "⏳ Uploading...";
+
+  try {
+    const url = await uploadToCloudinary(file);
+    if (url) {
+      document.getElementById('taxImgUrl').value = url;
+      document.getElementById('taxPreviewImg').src = url;
+    } else {
+      alert("Cloudinary upload failed — check unsigned preset '" + CLOUDINARY_UPLOAD_PRESET + "'.");
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save Live";
+  }
+}
+
+function saveAdminTaxonomy(e) {
+  e.preventDefault();
+  const cat = document.getElementById('taxCategory').value; // 'visions' | 'regions' | 'materials' | 'bosses'
+  const name = document.getElementById('taxName').value.trim();
+  const imgUrl = document.getElementById('taxImgUrl').value.trim();
+  if (!name) return;
+
+  const singularType = { visions: 'vision', regions: 'region', materials: 'material', bosses: 'boss' }[cat];
+  const safeKey = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+  if (isCloudConnected) {
+    db.ref(`taxonomies/${cat}/${safeKey}`).set(name);
+    if (imgUrl) {
+      db.ref(`taxonomies/customIcons/${singularType}:${name}`).set(imgUrl);
+    }
+  } else {
+    if (!TAXONOMIES[cat].includes(name)) TAXONOMIES[cat].push(name);
+    if (imgUrl) TAXONOMIES.customIcons[`${singularType}:${name}`] = imgUrl;
+    localStorage.setItem('teyvat_tax_v2', JSON.stringify(TAXONOMIES));
+    populateAdminPickers();
+    renderAdminTaxList();
+  }
+
+  document.getElementById('taxName').value = '';
+  document.getElementById('taxImgUrl').value = '';
+  document.getElementById('taxPreviewImg').src = "https://api.dicebear.com/7.x/shapes/svg?seed=icon";
+  alert(`✅ Saved "${name}" live!`);
+}
+
+function selectTaxForIconEdit(name) {
+  document.getElementById('taxName').value = name;
+  document.getElementById('taxName').focus();
+}
+
+function renderAdminTaxList() {
+  const catEl = document.getElementById('taxCategory');
+  if (!catEl) return;
+  const cat = catEl.value;
+  const singularType = { visions: 'vision', regions: 'region', materials: 'material', bosses: 'boss' }[cat];
+  const items = TAXONOMIES[cat] || [];
+
+  document.getElementById('adminTaxList').innerHTML = items.map(item => `
+    <button type="button" onclick="selectTaxForIconEdit('${item.replace(/'/g, "\\'")}')"
+      class="flex items-center gap-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 p-2 rounded-xl text-left transition">
+      <span class="w-7 h-7 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+        ${getIconSvg(singularType, item, 22)}
+      </span>
+      <span class="font-extrabold text-xs text-slate-700 truncate">${item}</span>
+    </button>
+  `).join('');
 }
 
 function saveAdminCharacter(e) {
@@ -1696,9 +1761,7 @@ function saveAdminCharacter(e) {
   const id = editId || name.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Date.now().toString().slice(-4);
 
   const charObj = {
-    id,
-    name,
-    img,
+    id, name, img,
     rarity: adminFormState.rarity,
     vision: adminFormState.vision,
     weapon: adminFormState.weapon,
@@ -1715,12 +1778,12 @@ function saveAdminCharacter(e) {
     const idx = CHARACTERS.findIndex(c => c.id === id);
     if (idx >= 0) CHARACTERS[idx] = charObj;
     else CHARACTERS.push(charObj);
-    localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    localStorage.setItem('teyvat_roster_v2', JSON.stringify(CHARACTERS));
     onRosterUpdated();
   }
 
   resetAdminForm();
-  alert(`✅ ${name} is now live for all players!`);
+  alert(`✅ ${name} is now live in the database for all players!`);
 }
 
 function editAdminCharacter(id) {
@@ -1744,12 +1807,12 @@ function editAdminCharacter(id) {
 }
 
 function deleteAdminCharacter(id) {
-  if (!confirm("Remove this character from the live roster?")) return;
+  if (!confirm("Remove this character from the live database?")) return;
   if (isCloudConnected) {
     db.ref(`characters/${id}`).remove();
   } else {
     CHARACTERS = CHARACTERS.filter(c => c.id !== id);
-    localStorage.setItem('teyvat_roster_v1', JSON.stringify(CHARACTERS));
+    localStorage.setItem('teyvat_roster_v2', JSON.stringify(CHARACTERS));
     onRosterUpdated();
   }
 }
@@ -1784,7 +1847,7 @@ function renderAdminRosterList() {
 
 // Boot
 populateAdminPickers();
-initCharacterSync();
+initCloudSync();
 </script>
 </body>
 </html>
