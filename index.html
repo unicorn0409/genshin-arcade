@@ -774,12 +774,17 @@ function getDynamicVersions() {
 
 function getIconSvg(type, val, size = 28) {
   // 1. Check if Admin uploaded a custom logo/photo to Cloudinary for this item!
-  const needsShadow = type === 'vision' || type === 'region';
-  const shadowStyle = needsShadow ? 'filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));' : '';
+  const visionShadow = type === 'vision' ? 'filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));' : '';
   const customUrl = TAXONOMIES.customIcons[`${type}:${val}`];
+
   if (customUrl) {
-  return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;${shadowStyle}" class="object-contain rounded-md inline-block" />`;
-}
+    if (type === 'region') {
+      return `<span style="width:${size + 6}px;height:${size + 6}px;" class="inline-flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 p-1 shadow-inner">
+        <img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;" class="object-contain" />
+      </span>`;
+    }
+    return `<img src="${customUrl}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;${visionShadow}" class="object-contain rounded-md inline-block" />`;
+  }
 
   // 2. Built-in fallback SVG emblems
   const visionColors = {
@@ -1425,7 +1430,7 @@ function submitWdGuess(charId) {
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xs px-1 ${bgClass(nameMatch)}">${guess.name}</div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(regMatch)}" title="${guess.region}">
-        <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('region', guess.region, 28)}</div>
+        <div class="bg-slate-800 p-1 rounded-xl flex items-center justify-center shadow-sm">${getIconSvg('region', guess.region, 28)}</div>
       </div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(visMatch)}" title="${guess.vision}">
         <div class="bg-white/95 p-1.5 rounded-xl flex items-center justify-center">${getIconSvg('vision', guess.vision, 28)}</div>
