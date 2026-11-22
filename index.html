@@ -401,6 +401,9 @@
                 <span>Room: <strong id="wdRoomCodeDisplay" class="tracking-widest">XXXXX</strong></span>
                 <button onclick="copyRoomCode('wdRoomCodeDisplay')" class="bg-blue-600 text-white px-1.5 py-0.5 rounded text-[10px]">Copy</button>
               </div>
+              <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-extrabold text-emerald-900">
+                🏆 Score: <span id="wdMyScore" class="text-sm text-emerald-700">0</span> – <span id="wdOppScore" class="text-sm text-purple-700">0</span>
+              </div>
               <div class="bg-slate-800 text-white px-3 py-1.5 rounded-xl text-xs font-extrabold">
                 ⏱️ <span id="wdTimerDisplay">00:00</span>
               </div>
@@ -1228,8 +1231,8 @@ function createWdRoom() {
   const roomObj = {
     code, round: 1, targetId: target.id, dynamicType: dyn,
     startTime: wdState.startTime, firstWinner: null,
-    p1: { name, tries: 0, greens: 0, yellows: 0 },
-    p2: { name: 'Waiting...', tries: 0, greens: 0, yellows: 0 },
+    p1: { name, tries: 0, greens: 0, yellows: 0, score: 0 },
+    p2: { name: 'Waiting...', tries: 0, greens: 0, yellows: 0, score: 0 },
     messages: [{ sender: 'System', text: `Race Room ${code} started! Solve the character first!` }]
   };
 
@@ -1251,7 +1254,8 @@ function joinWdRoom() {
         targetChar: target, dynamicType: room.dynamicType, guesses: [],
         roundOver: false, startTime: room.startTime || Date.now()
       };
-      db.ref(`wd_rooms/${code}/p2`).update({ name, tries: 0, greens: 0, yellows: 0 });
+      const existingScore = (room.p2 && typeof room.p2.score === 'number') ? room.p2.score : 0;
+      db.ref(`wd_rooms/${code}/p2`).update({ name, tries: 0, greens: 0, yellows: 0, score: existingScore });
       pushWdMessage(code, 'System', `${name} joined the race!`);
       startWdMultiSession(room, false);
     });
@@ -1296,7 +1300,11 @@ function startWdMultiSession(roomObj, isCreator) {
 
 function syncWdMultiUI(data) {
   const oppKey = wdState.role === 'p1' ? 'p2' : 'p1';
-  const opp = data[oppKey] || { name: 'Opponent', tries: 0, greens: 0, yellows: 0 };
+  const me = data[wdState.role] || { score: 0 };
+  const opp = data[oppKey] || { name: 'Opponent', tries: 0, greens: 0, yellows: 0, score: 0 };
+
+  document.getElementById('wdMyScore').textContent = me.score || 0;
+  document.getElementById('wdOppScore').textContent = opp.score || 0;
   document.getElementById('wdOppNameLabel').textContent = opp.name;
   document.getElementById('wdOppTries').textContent = `${opp.tries}/5`;
   document.getElementById('wdOppGreens').textContent = opp.greens;
@@ -1452,10 +1460,19 @@ function submitWdGuess(charId) {
         document.getElementById('wdHighscoreVal').textContent = wdState.streak;
       }
     } else if (isCloudConnected) {
+      let earnedPts = 1;
       db.ref(`wd_rooms/${wdState.roomCode}/firstWinner`).transaction(curr => {
-        return curr || { role: wdState.role, name: wdState.playerName, tries: wdState.guesses.length };
+        if (!curr) {
+          earnedPts = 2; // First to solve gets +2 pts!
+          return { role: wdState.role, name: wdState.playerName, tries: wdState.guesses.length };
+        }
+        return curr;
+      }, (err, committed, snap) => {
+        const winnerData = snap ? snap.val() : null;
+        const pts = (winnerData && winnerData.role === wdState.role) ? 2 : 1;
+        db.ref(`wd_rooms/${wdState.roomCode}/${wdState.role}/score`).transaction(s => (s || 0) + pts);
+        pushWdMessage(wdState.roomCode, 'System', `🏆 ${wdState.playerName} solved ${target.name} in ${wdState.guesses.length}/5 tries (+${pts} pts)!`);
       });
-      pushWdMessage(wdState.roomCode, 'System', `🏆 ${wdState.playerName} solved ${target.name} in ${wdState.guesses.length}/5 tries!`);
     }
   } else if (wdState.guesses.length >= 5) {
     wdState.roundOver = true;
