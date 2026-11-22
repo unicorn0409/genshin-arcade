@@ -150,8 +150,8 @@
       <button id="homeBtn" onclick="navigateTo('portal')" class="hidden bg-white/95 hover:bg-white text-slate-800 font-extrabold text-sm px-3.5 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
         <span>🏠</span> Home
       </button>
-      <button onclick="openAdminModal()" class="bg-white/95 hover:bg-white text-blue-700 font-extrabold text-sm px-3.5 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
-        <span>⚙️</span> Admin Dashboard
+      <button onclick="openCoffeeModal()" class="bg-[#FFDD00] hover:bg-[#ffe433] text-slate-900 font-extrabold text-sm px-3.5 py-2 rounded-xl shadow-md border-2 border-white transition flex items-center gap-1.5">
+        <span>☕</span> Buy Me a Coffee
       </button>
     </div>
 
@@ -166,7 +166,7 @@
   <!-- ==================== 1. PORTAL / LANDING PAGE ==================== -->
   <main id="portalView" class="relative z-10 max-w-5xl mx-auto px-4 pt-4 pb-20 flex flex-col items-center">
     <div class="text-center mb-8">
-      <div class="inline-block bg-white/90 text-blue-700 font-extrabold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm mb-3">
+      <div onclick="handleSecretAdminTap()" class="inline-block bg-white/90 text-blue-700 font-extrabold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full shadow-sm mb-3 select-none cursor-default">
         Teyvat Mini-Game Hub
       </div>
       <h1 class="font-logo text-5xl sm:text-6xl font-bold tracking-tight gw-title-red">
@@ -521,6 +521,37 @@
     </div>
   </div>
 
+  <!-- ==================== BUY ME A COFFEE MODAL ==================== -->
+  <div id="coffeeModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-4 border-white relative">
+      <button onclick="closeCoffeeModal()" class="absolute top-3.5 right-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-extrabold w-8 h-8 rounded-full text-xs">✕</button>
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-[#FFDD00] flex items-center justify-center text-3xl shadow-md mb-3">☕</div>
+      <h3 class="font-logo text-2xl font-bold text-slate-800">Fuel Teyvat Updates!</h3>
+      <p class="text-xs font-bold text-slate-500 mt-1 mb-4">Enjoying Genshin Arcade? Support server costs & new character patches!</p>
+
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <button type="button" onclick="selectCoffeeTier(1, this)" class="coffee-tier-btn py-2.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-slate-900 font-extrabold text-xs">1 ☕ ($3)</button>
+        <button type="button" onclick="selectCoffeeTier(3, this)" class="coffee-tier-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">3 ☕ ($9)</button>
+        <button type="button" onclick="selectCoffeeTier(5, this)" class="coffee-tier-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs">5 ☕ ($15)</button>
+      </div>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-left space-y-2">
+        <div class="flex items-center justify-between text-xs font-extrabold text-slate-700">
+          <span>UPI ID (India):</span>
+          <button type="button" onclick="copyUpiId()" class="text-blue-600 hover:underline">Copy UPI</button>
+        </div>
+        <div id="coffeeUpiText" class="bg-white border border-slate-200 rounded-xl px-3 py-2 font-mono text-xs font-bold text-slate-800 select-all">
+          mehulsoni@oksbi
+        </div>
+      </div>
+
+      <a id="coffeeExternalLink" href="https://www.buymeacoffee.com/" target="_blank" rel="noopener noreferrer"
+        class="block w-full py-3 bg-[#FFDD00] hover:bg-[#ffe433] text-slate-900 font-extrabold rounded-xl shadow-md transition text-sm">
+        ☕ Support with <span id="coffeeCountLabel">1 Coffee</span> →
+      </a>
+    </div>
+  </div>
+
   <!-- ==================== ADMIN DASHBOARD MODAL ==================== -->
   <div id="adminModal" class="hidden fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
     <div class="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 shadow-2xl border-4 border-white my-auto max-h-[92vh] overflow-y-auto">
@@ -575,11 +606,32 @@
                 <div>
                   <label class="block text-xs font-extrabold uppercase text-slate-500 mb-1">2. Upload Portrait Photo *</label>
                   <label class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 hover:border-blue-500 bg-white rounded-2xl p-3 cursor-pointer transition text-center">
-                    <img id="admPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=genshin" class="w-20 h-20 rounded-xl object-cover object-top border border-slate-200 mb-2" />
+                    <div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-blue-400 bg-slate-100 mb-2 shadow-inner">
+                      <img id="admPreviewImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=genshin" class="w-full h-full object-cover" style="object-position: 50% 15%; transform: scale(1.15); transform-origin: 50% 15%;" />
+                    </div>
                     <span class="text-xs font-extrabold text-blue-600">📁 Choose File (Auto-uploads to Cloudinary)</span>
                     <input id="admFileInput" type="file" accept="image/*" onchange="handleAdminImageUpload(event)" class="hidden" />
                   </label>
-                  <input id="admImgUrl" type="url" placeholder="Or paste direct image URL..." oninput="document.getElementById('admPreviewImg').src=this.value" class="mt-2 w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white" />
+                  <input id="admImgUrl" type="url" placeholder="Or paste direct image URL..." oninput="document.getElementById('admPreviewImg').src=this.value; updateAdmCropPreview();" class="mt-2 w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold bg-white" />
+
+                  <!-- Live Square Tile Framing Controls -->
+                  <div class="mt-2.5 bg-white border border-slate-200 rounded-2xl p-2.5 space-y-2">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10px] font-extrabold uppercase text-slate-500">🎯 Square Tile Framing</span>
+                      <button type="button" onclick="resetAdmCrop()" class="text-[10px] font-extrabold text-blue-600 hover:underline">Reset</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-[10px] font-bold text-slate-600">
+                      <label>X: <span id="admCropXVal">50</span>%
+                        <input id="admCropX" type="range" min="0" max="100" value="50" oninput="updateAdmCropPreview()" class="w-full accent-blue-600" />
+                      </label>
+                      <label>Y: <span id="admCropYVal">15</span>%
+                        <input id="admCropY" type="range" min="0" max="100" value="15" oninput="updateAdmCropPreview()" class="w-full accent-blue-600" />
+                      </label>
+                      <label>Zoom: <span id="admCropZoomVal">1.15</span>x
+                        <input id="admCropZoom" type="range" min="1" max="2.5" step="0.05" value="1.15" oninput="updateAdmCropPreview()" class="w-full accent-blue-600" />
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -744,8 +796,8 @@ const WEAPON_ICONS = {
 };
 const STATS = [
   "CRIT Rate%", "CRIT DMG%", "ATK%", "HP%", "DEF%",
-  "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
-  "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
+  "Energy Recharge%", "Elemental Mastery", "Physical DMG%", "ATK% (Varies by Element)",
+  "Pyro DMG%", "Hydro DMG%", "Anemo DMG%", "Electro DMG%", "Dendro DMG%", "Cryo DMG%", "Geo DMG%", "Healing Bonus%"
 ];
 
 let TAXONOMIES = {
@@ -803,7 +855,7 @@ function getIconSvg(type, val, size = 28) {
       Geo: `<polygon points="12,2 21,12 12,22 3,12" fill="${c}"/><polygon points="12,7 16,12 12,17 8,12" fill="#fff" fill-opacity="0.45"/>`
     };
     const fallback = `<circle cx="12" cy="12" r="9" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
-return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${shadowStyle}" title="${val}">${paths[val] || fallback}</svg>`;  }
+return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${visionShadow}" title="${val}">${paths[val] || fallback}</svg>`;  }
 
  if (type === "weapon") {
     const url = WEAPON_ICONS[val];
@@ -828,7 +880,7 @@ return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${shado
       Snezhnaya: `<path d="M12 2v20M4 7l16 10M20 7L4 17" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/>`
     };
     const fallback = `<rect x="3" y="3" width="18" height="18" rx="5" fill="${c}"/><text x="12" y="16" font-size="10" font-weight="bold" text-anchor="middle" fill="#fff">${val[0] || '?'}</text>`;
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${shadowStyle}" title="${val}">${rPaths[val] || fallback}</svg>`;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="${visionShadow}" title="${val}">${rPaths[val] || fallback}</svg>`;
   }
 
   let hash = 0;
@@ -1061,13 +1113,60 @@ function syncGwRoomUI(data) {
   }
 }
 
+function getCharImgStyle(c) {
+  if (!c) return 'object-fit: cover; object-position: 50% 15%;';
+  const x = c.cropX ?? 50;
+  const y = c.cropY ?? 15;
+  const zoom = c.cropZoom ?? 1.15;
+  return `object-fit: cover; object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+}
+
+// Secret Admin Access: 5 rapid clicks on "Teyvat Mini-Game Hub" pill OR press Ctrl+Shift+A
+let _adminTapCount = 0;
+let _adminTapTimer = null;
+function handleSecretAdminTap() {
+  _adminTapCount++;
+  clearTimeout(_adminTapTimer);
+  _adminTapTimer = setTimeout(() => { _adminTapCount = 0; }, 1500);
+  if (_adminTapCount >= 5) {
+    _adminTapCount = 0;
+    openAdminModal();
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+    e.preventDefault();
+    openAdminModal();
+  }
+});
+
+// Buy Me a Coffee Modal Controls
+function openCoffeeModal() {
+  document.getElementById('coffeeModal').classList.remove('hidden');
+}
+function closeCoffeeModal() {
+  document.getElementById('coffeeModal').classList.add('hidden');
+}
+function selectCoffeeTier(count, btnEl) {
+  document.querySelectorAll('.coffee-tier-btn').forEach(b => {
+    b.className = "coffee-tier-btn py-2.5 rounded-xl border-2 border-slate-200 bg-white text-slate-600 font-extrabold text-xs";
+  });
+  btnEl.className = "coffee-tier-btn py-2.5 rounded-xl border-2 border-amber-500 bg-amber-50 text-slate-900 font-extrabold text-xs";
+  document.getElementById('coffeeCountLabel').textContent = count === 1 ? '1 Coffee' : `${count} Coffees`;
+}
+function copyUpiId() {
+  const upi = document.getElementById('coffeeUpiText').textContent.trim();
+  navigator.clipboard.writeText(upi);
+  alert(`UPI ID (${upi}) copied to clipboard!`);
+}
+
 function renderGwBoard() {
   const grid = document.getElementById('gwBoardGrid');
   grid.innerHTML = gwState.boardChars.map(c => {
     const isElim = gwState.eliminatedIds.has(c.id);
     const isSecret = gwState.mySecretId === c.id;
     return `<div onclick="handleGwTileClick('${c.id}')" class="gw-tile ${isElim ? 'eliminated' : ''} ${isSecret ? 'secret-picked' : ''} ${gwState.finalGuessMode ? 'guess-mode' : ''}">
-      <img src="${c.img}" alt="" loading="lazy" />
+      <img src="${c.img}" alt="" loading="lazy" style="${getCharImgStyle(c)}" />
     </div>`;
   }).join('');
 }
@@ -1078,7 +1177,7 @@ function handleGwTileClick(charId) {
 
   if (!gwState.mySecretId) {
     gwState.mySecretId = charId;
-    document.getElementById('gwMySecretPreview').innerHTML = `<img src="${char.img}" class="w-full h-full object-cover object-top" />`;
+    document.getElementById('gwMySecretPreview').innerHTML = `<img src="${char.img}" class="w-full h-full" style="${getCharImgStyle(char)}" />`;
     document.getElementById('gwMySecretName').textContent = char.name;
     document.getElementById('gwPhaseHint').textContent = "Click tiles to eliminate suspects!";
     document.getElementById('gwSelectBanner').classList.add('hidden');
@@ -1377,7 +1476,7 @@ function renderWdQuickGrid() {
     const used = guessedIds.has(c.id);
     return `<button type="button" ${used || wdState.roundOver ? 'disabled' : ''} onclick="submitWdGuess('${c.id}')" title="${c.name}"
       class="relative aspect-square rounded-xl overflow-hidden border-2 ${used ? 'border-slate-300 opacity-35 grayscale cursor-not-allowed' : 'border-white hover:border-blue-500 hover:scale-105 shadow-sm'} transition bg-slate-200">
-      <img src="${c.img}" alt="${c.name}" class="w-full h-full object-cover object-top" />
+      <img src="${c.img}" alt="${c.name}" class="w-full h-full" style="${getCharImgStyle(c)}" />
     </button>`;
   }).join('');
 }
@@ -1425,7 +1524,7 @@ function submitWdGuess(charId) {
   const rowHtml = `
     <div class="grid grid-cols-7 gap-2 items-center text-center wd-cell-anim">
       <div class="aspect-square rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 mx-auto w-14 h-14">
-        <img src="${guess.img}" class="w-full h-full object-cover object-top" />
+        <img src="${guess.img}" class="w-full h-full" style="${getCharImgStyle(guess)}" />
       </div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center font-extrabold text-xs px-1 ${bgClass(nameMatch)}">${guess.name}</div>
       <div class="h-14 rounded-2xl border-2 flex items-center justify-center ${bgClass(dynMatch)}" title="${guess[wdState.dynamicType]}">${dynCellInner}</div>
@@ -1834,6 +1933,27 @@ function deleteAdminTaxonomy(cat, name) {
   }
 }
 
+function updateAdmCropPreview() {
+  const x = document.getElementById('admCropX').value;
+  const y = document.getElementById('admCropY').value;
+  const z = document.getElementById('admCropZoom').value;
+  document.getElementById('admCropXVal').textContent = x;
+  document.getElementById('admCropYVal').textContent = y;
+  document.getElementById('admCropZoomVal').textContent = Number(z).toFixed(2);
+  const img = document.getElementById('admPreviewImg');
+  img.style.objectFit = 'cover';
+  img.style.objectPosition = `${x}% ${y}%`;
+  img.style.transform = `scale(${z})`;
+  img.style.transformOrigin = `${x}% ${y}%`;
+}
+
+function resetAdmCrop() {
+  document.getElementById('admCropX').value = 50;
+  document.getElementById('admCropY').value = 15;
+  document.getElementById('admCropZoom').value = 1.15;
+  updateAdmCropPreview();
+}
+
 function saveAdminCharacter(e) {
   e.preventDefault();
   const name = document.getElementById('admName').value.trim();
@@ -1845,6 +1965,9 @@ function saveAdminCharacter(e) {
 
   const charObj = {
     id, name, img,
+    cropX: Number(document.getElementById('admCropX').value),
+    cropY: Number(document.getElementById('admCropY').value),
+    cropZoom: Number(document.getElementById('admCropZoom').value),
     rarity: adminFormState.rarity,
     vision: adminFormState.vision,
     weapon: adminFormState.weapon,
@@ -1878,6 +2001,10 @@ function editAdminCharacter(id) {
   document.getElementById('admName').value = c.name;
   document.getElementById('admImgUrl').value = c.img;
   document.getElementById('admPreviewImg').src = c.img;
+  document.getElementById('admCropX').value = c.cropX ?? 50;
+  document.getElementById('admCropY').value = c.cropY ?? 15;
+  document.getElementById('admCropZoom').value = c.cropZoom ?? 1.15;
+  updateAdmCropPreview();
   document.getElementById('admVersion').value = c.version;
   document.getElementById('admMaterial').value = c.material;
   document.getElementById('admBoss').value = c.boss;
@@ -1906,6 +2033,7 @@ function resetAdminForm() {
   document.getElementById('adminFormTitle').textContent = "➕ Add New Character (Goes Live Globally)";
   document.getElementById('adminCancelEditBtn').classList.add('hidden');
   document.getElementById('admPreviewImg').src = "https://api.dicebear.com/7.x/shapes/svg?seed=genshin";
+  resetAdmCrop();
   updateAdminDropdownPreviews();
 }
 
@@ -1914,7 +2042,9 @@ function renderAdminRosterList() {
   document.getElementById('adminRosterList').innerHTML = CHARACTERS.map(c => `
     <div class="flex items-center justify-between bg-slate-50 border border-slate-200 p-2 rounded-2xl">
       <div class="flex items-center gap-2.5 min-w-0">
-        <img src="${c.img}" class="w-10 h-10 rounded-xl object-cover object-top shrink-0 border border-slate-200" />
+        <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
+          <img src="${c.img}" class="w-full h-full" style="${getCharImgStyle(c)}" />
+        </div>
         <div class="truncate">
           <div class="font-extrabold text-xs text-slate-800 truncate">${c.name}</div>
           <div class="text-[10px] font-bold text-slate-500">${c.rarity}★ • ${c.region} • v${c.version}</div>
