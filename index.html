@@ -1554,6 +1554,7 @@ function unlockAdmin() {
   if (val === ADMIN_PASSCODE) {
     document.getElementById('adminLockBox').classList.add('hidden');
     document.getElementById('adminContentBox').classList.remove('hidden');
+    populateAdminPickers();
     renderAdminRosterList();
   } else {
     alert("Wrong Admin Passcode!");
