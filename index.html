@@ -849,15 +849,22 @@ function initCloudSync() {
       onRosterUpdated();
     });
 
-    // 2. Live Taxonomies & Custom Icons/Logos
+// 2. Live Taxonomies & Custom Icons/Logos
     db.ref('taxonomies').on('value', (snap) => {
       const val = snap.val() || {};
-      const merge = (base, extra) => Array.from(new Set([...base, ...(extra ? Object.values(extra) : [])]));
-      TAXONOMIES.visions = merge(BASE_VISIONS, val.visions);
-      TAXONOMIES.regions = merge(BASE_REGIONS, val.regions);
-      TAXONOMIES.materials = merge(BASE_MATERIALS, val.materials);
-      TAXONOMIES.bosses = merge(BASE_BOSSES, val.bosses);
+      TAXONOMIES.visions = val.visions ? Object.values(val.visions) : [];
+      TAXONOMIES.regions = val.regions ? Object.values(val.regions) : [];
+      TAXONOMIES.materials = val.materials ? Object.values(val.materials) : [];
+      TAXONOMIES.bosses = val.bosses ? Object.values(val.bosses) : [];
       TAXONOMIES.customIcons = val.customIcons || {};
+
+      if (TAXONOMIES.visions.length && !TAXONOMIES.visions.includes(adminFormState.vision)) {
+        adminFormState.vision = TAXONOMIES.visions[0];
+      }
+      if (TAXONOMIES.regions.length && !TAXONOMIES.regions.includes(adminFormState.region)) {
+        adminFormState.region = TAXONOMIES.regions[0];
+      }
+
       populateAdminPickers();
       renderAdminTaxList();
     });
