@@ -731,7 +731,14 @@ if (FIREBASE_CONFIG.databaseURL) {
 /* ============================================================================
    2. DYNAMIC TAXONOMIES & CUSTOM UPLOADED LOGOS (SYNCED WITH FIREBASE)
    ============================================================================ */
-  const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
+const WEAPONS = ["Sword", "Claymore", "Polearm", "Bow", "Catalyst"];
+const WEAPON_ICONS = {
+  Sword: "https://res.cloudinary.com/dyxxdwbe/image/upload/v1795338451/Icon_Sword.webp",
+  Claymore: "https://res.cloudinary.com/dyxxdwbe/image/upload/v1795338451/Icon_Claymore.webp",
+  Polearm: "https://res.cloudinary.com/dyxxdwbe/image/upload/v1795338451/Icon_Polearm.webp",
+  Bow: "https://res.cloudinary.com/dyxxdwbe/image/upload/v1795338450/Icon_Bow.webp",
+  Catalyst: "https://res.cloudinary.com/dyxxdwbe/image/upload/v1795338450/Icon_Catalyst.webp"
+};
 const STATS = [
   "CRIT Rate%", "CRIT DMG%", "ATK%", "HP%", "DEF%",
   "Energy Recharge%", "Elemental Mastery", "Pyro DMG%", "Hydro DMG%",
@@ -789,15 +796,11 @@ function getIconSvg(type, val, size = 28) {
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${paths[val] || fallback}</svg>`;
   }
 
-  if (type === "weapon") {
-    const wPaths = {
-      Sword: `<path d="M19 3l2 2-11 11-3 1 1-3L19 3zM5 15l4 4M4 20l2-2" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>`,
-      Claymore: `<path d="M18 2l4 4-11 11-4-4L18 2zM6 14l4 4M3 21l4-4" stroke="#1e293b" stroke-width="2.5" fill="#94a3b8"/>`,
-      Polearm: `<path d="M4 20L19 5M15 4h5v5" stroke="#334155" stroke-width="2.3" stroke-linecap="round" fill="none"/>`,
-      Bow: `<path d="M5 4c8 1 14 7 15 15M5 4l15 15M14 6l4-2-2 4" stroke="#334155" stroke-width="2.2" stroke-linecap="round" fill="none"/>`,
-      Catalyst: `<rect x="5" y="4" width="14" height="16" rx="2" stroke="#334155" stroke-width="2.2" fill="#e2e8f0"/><circle cx="12" cy="12" r="3" fill="#3b82f6"/>`
-    };
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" title="${val}">${wPaths[val] || ''}</svg>`;
+ if (type === "weapon") {
+    const url = WEAPON_ICONS[val];
+    return url
+      ? `<img src="${url}" alt="${val}" title="${val}" style="width:${size}px;height:${size}px;" class="object-contain rounded-md inline-block" />`
+      : `<span class="text-xs font-extrabold">${val}</span>`;
   }
 
   if (type === "region") {
